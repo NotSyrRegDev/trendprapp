@@ -1,20 +1,37 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StatusBar as ExpoStatusBar } from "expo-status-bar";
+import { useFonts } from 'expo-font';
+import { AuthContextProvider } from './src/context/AuthContext';
+import { AppContextProvider } from './src/context/AppContext';
+import { Navigation } from "./src/navigators/Navigation";
+import { AdminContextProvider } from "./src/context/AdminContext";
 
-export default function App() {
+const App = () => {
+
+  const [loaded] = useFonts({
+    Cairo: require('./assets/fonts/Cairo-Regular.ttf'),
+    Cairo_Bold: require('./assets/fonts/Cairo-Bold.ttf'),
+    Cairo_Light: require('./assets/fonts/Cairo-Light.ttf'),
+    Tajawal: require('./assets/fonts/Tajawal-Regular.ttf'),
+    Tajawal_Bold: require('./assets/fonts/Tajawal-Bold.ttf'),
+    Tajawal_Light: require('./assets/fonts/Tajawal-Light.ttf'),
+
+  });
+
+  if (!loaded) { 
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AuthContextProvider>
+      <AppContextProvider>
+      <AdminContextProvider>
+      <Navigation />
+      </AdminContextProvider>
+      <ExpoStatusBar style="auto" />
+      </AppContextProvider>
+    
+    </AuthContextProvider>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;

@@ -1,0 +1,39 @@
+
+COLORS : 
+
+WHITE : #FFFFFF
+
+Green COlor : #0eff85
+
+Dark Green : #12a591
+
+BLACK COLOR : #020404
+
+GOOGLE FONTS : 
+
+NAV CONT : Tajawal 
+HERO HEADLINE : Readex Pro
+
+font-family: 'Readex Pro', sans-serif;
+font-family: 'Tajawal', sans-serif;
+
+
+BOX SHADOWS : 
+
+box-shadow:0px 45px 100px rgba(0, 0, 0, 0.4), inset 0 0 0 1000px rgba(18, 165, 145, );
+    
+
+FONTS : 
+
+1 - Cairo 
+2- Tajawal
+
+
+
+
+FIGMA DESIGN 
+
+
+https://www.figma.com/file/ZtN1J4RuTtVpvArSStisA8/Movie-Ticket-App?type=design&node-id=0-1&mode=design&t=WXlVV2BabUhjKRQL-0
+
+

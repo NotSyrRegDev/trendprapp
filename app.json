@@ -1,13 +1,19 @@
 {
   "expo": {
-    "name": "TrendPrApp",
-    "slug": "TrendPrApp",
+    "name": "Trend Pr App",
+    "slug": "trend-pr",
+    "description": "This is an awesome app.",
     "version": "1.0.0",
+    "permissions": [
+      "CAMERA",
+      "MEDIA_LIBRARY"
+    ],
+    "platforms": ["ios", "android"],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-pr.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-trend.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -15,16 +21,28 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.notregsyrdev.trendpr",
+      "infoPlist": {
+        "NSPhotoLibraryAddUsageDescription": "Save screenshots to the camera roll"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f9ca821d-a9ad-4071-9917-52c02e741007"
+      }
     }
   }
 }
