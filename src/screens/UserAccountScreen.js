@@ -6,12 +6,9 @@ import SettingComponent from '../components/SettingComponent';
 const UserAccountScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
-      <StatusBar hidden />
-    
-      <View className="flex items-center justify-center mt-2 sticky" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-      </View>
+      <StatusBar barStyle={'light-content'} />
 
+      <View className="flex  justify-center h-full" >
       <View className="mt-2" >
       <Text style={styles.font} className="block text-white font-bold mb-2 text-2xl"  >
        الحساب
@@ -34,7 +31,6 @@ const UserAccountScreen = ({navigation}) => {
 
       </View>
 
-
       <View style={styles.profileContainer} className="mt-12" >
         <SettingComponent
           icon="comment-question-outline"
@@ -46,17 +42,19 @@ const UserAccountScreen = ({navigation}) => {
           icon="information-outline"
           heading="من نحن"
           navigation={navigation}
-          toNav={"ContactUsScreen"}
+          toNav={"WhoWeAreScreen"}
         />
         <SettingComponent
           icon="phone-hangup-outline"
           heading="تواصل معنا"
           navigation={navigation}
-          toNav={"WhoWeAreScreen"}
+          toNav={"ContactUsScreen"}
         />
-        
-       
       </View>
+      </View>
+    
+
+      
     </View>
   );
 };
@@ -89,8 +87,8 @@ const styles = StyleSheet.create({
   },
   logo: {
     resizeMode: 'cover',
-    maxHeight: 100,
-    maxWidth: 320,
+    maxHeight: 80,
+    maxWidth: 240,
   },
   font: {
     fontWeight: 'bold',

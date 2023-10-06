@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
 
     width: '100%',
     flexDirection: 'row',
-    paddingVertical: SPACING.space_24,
+    paddingVertical: SPACING.space_20,
   },
 
   iconStyle: {
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: FONTFAMILY.tajawal_bold,
-    fontSize: FONTSIZE.size_18,
+    fontSize: FONTSIZE.size_16,
     color: COLORS.White,
   },
 

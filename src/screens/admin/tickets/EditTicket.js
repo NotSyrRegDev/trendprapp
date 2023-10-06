@@ -46,15 +46,14 @@ const EditTicket = ({navigation , route}) => {
     getInfoFromFireStore();
   } , []);
 
-  const [selectedImageActor , setSelectedImageActor ] = useState(null);
-  
-
   const handleEditActor = () => {
 
-    editTicket( ticketSeat, ticketPrice , ticketCategory , route.params.editId );
-    setTimeout( () => {
+    setIsLoading(true);
+    editTicket( ticketSeat, ticketPrice , ticketCategory , route.params.editId  , () => {
       navigation.navigate('AdminDashboard')
-    } , 3500)
+      setIsLoading(false);
+    });
+   
   }
 
   if (
@@ -65,7 +64,7 @@ const EditTicket = ({navigation , route}) => {
       style={styles.container}
       bounces={false}
       contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
       <View className="flex items-center justify-center mt-2 sticky" >
     <Image source={require('../../../assets/icons/logo_color_white.png')} style={styles.logo} />
@@ -212,19 +211,19 @@ const EditTicket = ({navigation , route}) => {
 </View>
 { /*  END SINGLE INPUT */ }
 
-
-
-<TouchableOpacity
+    {isLoading ?  (
+      <View  className="flex items-center justify-center" >
+              <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+            </View>
+    ) : (
+    <TouchableOpacity
         className="text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() => handleEditActor() }>
           <Text style={styles.buttonText}> تعديل التذكرة </Text>
         </TouchableOpacity>
-
-
-
-    
-      
+    )}
+          
 
 </View>
       </KeyboardAvoidingView>

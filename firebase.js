@@ -1,5 +1,5 @@
 import { initializeApp , getApps } from "firebase/app";
-import { collection, doc, setDoc  , getDocs , getFirestore , where , query , deleteDoc  , updateDoc , increment  , getDoc  , orderBy , limit } from "firebase/firestore";
+import { collection, doc, setDoc  , getDocs , getFirestore , where , query , deleteDoc  , updateDoc , increment  , getDoc  , orderBy , limit , or } from "firebase/firestore";
 import { signInWithEmailAndPassword , getAuth , signOut , updatePassword  , createUserWithEmailAndPassword , onAuthStateChanged , updateProfile  , fetchSignInMethodsForEmail   } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL  , refFromURL, deleteObject } from 'firebase/storage';
 
@@ -20,7 +20,7 @@ const isFirebaseConnected = () => {
   return firebaseApps.length > 0;
 };
 
-console.log("Is Firebase connected:", isFirebaseConnected());
+
   
    const FIREBASE_APP = initializeApp(firebaseConfig);
    const auth = getAuth(FIREBASE_APP);
@@ -32,4 +32,4 @@ console.log("Is Firebase connected:", isFirebaseConnected());
 
    export { FIREBASE_APP , auth , db ,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    onAuthStateChanged , setDoc , doc , where , query , collection , getDocs   , deleteDoc , updateDoc , increment , getDoc  , signOut , orderBy ,limit , updatePassword  , updateProfile , fetchSignInMethodsForEmail , storage , ref , getDownloadURL , uploadBytes , refFromURL, deleteObject  }
+    onAuthStateChanged , setDoc , doc , where , query , collection , getDocs   , deleteDoc , updateDoc , increment , getDoc  , signOut , orderBy ,limit , updatePassword  , updateProfile , fetchSignInMethodsForEmail , storage , ref , getDownloadURL , uploadBytes , refFromURL, deleteObject , or  }

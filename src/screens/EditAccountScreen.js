@@ -1,70 +1,65 @@
-import React , {useContext, useState , useEffect} from 'react';
-import {Text, View, StyleSheet, StatusBar, Image , KeyboardAvoidingView , TextInput , TouchableOpacity  , Platform} from 'react-native';
+import React , {useContext, useState , useEffect , useCallback} from 'react';
+import {Text, View, StyleSheet, StatusBar, Image , KeyboardAvoidingView , TextInput , TouchableOpacity  , Platform , ActivityIndicator} from 'react-native';
 import {COLORS, FONTFAMILY, FONTSIZE, SPACING , BORDERRADIUS} from '../theme/theme';
 import { AuthenticationContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 const EditAccountScreen = ({navigation}) => {
 
+  const [isLoading , setIsLoading] = useState(false);
   const [userId, setUserId] = useState('');
   const [fullName,setFullName] = useState('');
   const [phoneNumber,setPhoneNumber] = useState('');
   const [userEmail, setEmail] = useState('');
 
+  
   const handlePhoneNumberChange = (text) => {
-    // Validate input to only allow numbers
-    const regex = /^[0-9]*$/;
-    if (regex.test(text)) {
-      setPhoneNumber(text);
-    }
+    const numericText = text.replace(/[^0-9]/g, '');
+    const maxLength = 10;
+    const truncatedText = numericText.slice(0, maxLength);
+    setPhoneNumber(truncatedText);
   };
 
-  const {  editUserProfile , error , success } = useContext(AuthenticationContext);
+  const {  editUserProfile , error , success , setError  } = useContext(AuthenticationContext);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const value = await AsyncStorage.getItem('trendpr_user');
-        let jsonPrsed = JSON.parse(value);
-        setUserId(jsonPrsed.id);
-        setFullName(jsonPrsed.full_name);
-        setPhoneNumber(jsonPrsed.phone_number);
-        setEmail(jsonPrsed.email);
-
-      } catch (error) {
+  useFocusEffect(
+    useCallback(() => {
+      const getData = async () => {
+        try {
+          const value = await AsyncStorage.getItem('trendpr_user');
+          let jsonPrsed = JSON.parse(value);
+          setUserId(jsonPrsed.id);
+          setFullName(jsonPrsed.full_name);
+          setPhoneNumber(jsonPrsed.phone_number);
+          setEmail(jsonPrsed.email);
         
-      }
-    };
-
-    getData();
-  }, []);
+        } catch (error) {
+        }
+      };
+  
+      getData();
+    }, [])
+  );
 
   const editProfile = () => {
-    editUserProfile(userId , fullName  , userEmail , phoneNumber );
-   setTimeout(() => {
-    navigation.navigate('Tab');
-   }, 2500);
+  
+    setIsLoading(true);
+    editUserProfile(userId , fullName  , userEmail , phoneNumber  , () => {
+      navigation.navigate('Tab');
+      setIsLoading(false);
+    });
+
   }
 
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
     
-    
-      <View className="flex items-center justify-center mt-3 relative" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
+      <View className="flex flex-col h-full mt-10" >
 
-      </View>
-
-      <View className="mt-2 flex items-end" >
-      <Text style={styles.font} className="text-right block text-white font-bold mb-2 text-2xl"  >
-        تعديل الحساب
-        </Text>
-
-      </View>
-
-      
       {error && (
           <View className=" p-4  text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 text-right mb-5 flex items-emd" >
             <Text style={styles.errorText}  >{error}</Text>
@@ -153,12 +148,20 @@ const EditAccountScreen = ({navigation}) => {
       </KeyboardAvoidingView>
 
       <View className="flex items-center w-full" >
-    <TouchableOpacity
+
+      {isLoading ? (
+        <View  className="flex items-center justify-center" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+      ) : (
+        <TouchableOpacity
         className="text-white mt-10 rounded-lg text-sm px-6 py-4 mr-2 mb-2 "
           style={styles.button}
           onPress={() => editProfile()  }>
           <Text style={styles.buttonText}>  تعديل حساب  </Text>
         </TouchableOpacity>
+      )}
+
 
     <TouchableOpacity
         className="text-white mt-5 text-sm px-6 py-4 "
@@ -167,6 +170,10 @@ const EditAccountScreen = ({navigation}) => {
           <Text style={styles.buttonText}>  رجوع  </Text>
         </TouchableOpacity>
     </View>
+
+      </View>
+      
+    
 
       
     </View>

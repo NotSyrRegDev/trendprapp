@@ -46,7 +46,7 @@ import {
       <SafeAreaView
       style={styles.container}
   >
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
   
       <ScrollView >
   

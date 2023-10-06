@@ -20,10 +20,14 @@ import RNPickerSelect from 'react-native-picker-select';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import * as ImagePicker from 'expo-image-picker';
+import { AppContext } from '../../../context/AppContext';
 
 const EditEvent = ({navigation , route}) => {
 
-  const { editEvent , error  , success , setError , uploadImage , convertTimeToDateString  , deleteObjectFromFirestore } = useContext(AdminContext);
+  const { editEvent , error  , success , setError , uploadImage , convertTimeToDateString   } = useContext(AdminContext);
+
+  const { categoryArray } = useContext(AppContext);
+
   const [isLoading , setIsLoading] = useState();
   const [movieData, setMovieData] = useState(null);
   const [eventName , setEventName] = useState('');
@@ -39,6 +43,22 @@ const EditEvent = ({navigation , route}) => {
   const [selectedImageBanner, setSelectedImageBanner] = useState(null);
   const [operationImage , setOperationImage] = useState(false);
   const [operationBanner , setOperationBanner] = useState(false);
+  const [selectedCategory , setSelectedCategory] = useState('');
+  const [tagsEventsArray , setTagsEventsArray] = useState([]);
+  const [productTag , setProductTag] = useState('');
+
+
+  const handleAddTags = () => {
+    if (productTag !== '') {
+      setTagsEventsArray(prevArray => [...prevArray, productTag]);
+      setProductTag('');
+    }
+    else {
+      setError("يرجى ادخال نص الدلالة")
+    }
+  
+  };
+
 
   useEffect(() => {
     const getInfoFromFireStore = async () => {
@@ -57,6 +77,8 @@ const EditEvent = ({navigation , route}) => {
           setEventRating(docSnap.data().event_rating);
           setEventImage(docSnap.data().event_image);
           setEventBanner(docSnap.data().event_banner);
+          setSelectedCategory(docSnap.data().event_category);
+          setTagsEventsArray(docSnap.data().tags);
           setIsLoading(false);
         } else {
           setMovieData(null);
@@ -115,11 +137,12 @@ const EditEvent = ({navigation , route}) => {
   
 
   const editTheEvent = () => {
-    editEvent(route.params.eventId , eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventImage , eventBanner );
+    setIsLoading(true);
+    editEvent(route.params.eventId , eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventImage , eventBanner , tagsEventsArray  , () => {
+      navigation.navigate('AdminDashboard');
+      setIsLoading(false);
+    });
 
-    setTimeout( () => {
-      navigation.navigate('AdminDashboard')
-    } , 5500)
 
   }
 
@@ -143,7 +166,7 @@ const EditEvent = ({navigation , route}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
+        <StatusBar barStyle={'light-content'} />
 
         {  /* TOP HEader */}
       <View className="flex flex-row items-center justify-between mt-16" >
@@ -272,6 +295,38 @@ const EditEvent = ({navigation , route}) => {
 </View>
 { /*  END SINGLE INPUT */ }
 
+
+{ /*  SINGLE INPUT */ }
+<View className="mb-8 " >
+<Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
+تصنيف المسرحية <Text className="text-red-500 text-base" > * </Text>  
+</Text>
+
+<RNPickerSelect
+  style={pickerSelectStyles}
+  pickerProps={{
+    accessibilityLabel: selectedCategory,
+  }}
+  placeholder={{
+    label: 'اختر',
+    value: '',
+  }}
+  selectedValue={selectedCategory }
+  onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+  items={categoryArray.map((show) => ({
+    label: show.category,
+    value: show.category,
+  }))}
+>
+</RNPickerSelect>
+
+
+
+
+</View>
+{ /*  END SINGLE INPUT */ }
+
+
 { /*  SINGLE INPUT */ }
 <View className="mb-8 " >
 <Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
@@ -335,6 +390,56 @@ const EditEvent = ({navigation , route}) => {
 
 </View>
 { /*  END SINGLE INPUT */ }
+
+
+
+<View className="mb-8 " >
+<Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
+ دلالة المسرحية <Text className="text-red-500 text-base" > * </Text>  
+</Text>
+
+<View className="realtive" >
+
+<View style={styles.inputBox} >
+ 
+  <TextInput
+  style={styles.inputStyle}
+  className="appearance-none border rounded-xl w-full py-2 px-1 text-gray-700 leading-tight "
+  id="title"
+  placeholder="قم بادخل دلالات المسرحية"
+  onChangeText={(text) => setProductTag(text) }
+  value={productTag}
+
+  />
+</View>
+
+<View className="absolute top-2 right-0" >
+
+<TouchableOpacity
+className="text-center rounded-full px-6 py-2"
+style={styles.button}
+onPress={() => handleAddTags() }
+>
+
+<Text style={styles.buttonText}> اضافة  </Text>
+</TouchableOpacity>
+
+</View>
+</View>
+
+</View>
+
+<View className="mb-5 flex flex-row items-end justify-end flex-wrap mt-5" >
+{tagsEventsArray && tagsEventsArray.map((item , index) => (
+<View key={index} className="rounded-full w-24 mx-1 py-2 text-center mt-2" style={styles.buttonTag} >
+<Text className="text-xs text-white " style={styles.buttonText} >  {item}  </Text>
+</View>
+
+)) }
+
+</View>
+
+
 
 { /*  SINGLE INPUT */ }
 <View className="mb-8 " >
@@ -434,14 +539,20 @@ const EditEvent = ({navigation , route}) => {
 { /*  END SINGLE INPUT */ }
 
 
-  {!isLoading && (
-    <TouchableOpacity
+ 
+
+  {isLoading ?  (
+  <View  className="flex items-center justify-center" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+) : (
+  <TouchableOpacity
         className="mt-2 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() => editTheEvent() }>
           <Text style={styles.buttonText}>  تعديل المسرحية </Text>
         </TouchableOpacity>
-  )}
+)}
 
 
       
@@ -568,6 +679,13 @@ const styles = StyleSheet.create({
     fontSize: FONTSIZE.size_14,
     color: COLORS.White,
   },
+
+  buttonTag: {
+    borderColor: 'none',
+    backgroundColor: COLORS.DarkGreen,
+    opacity: 0.6
+  },
+
 });
 
 export default EditEvent;

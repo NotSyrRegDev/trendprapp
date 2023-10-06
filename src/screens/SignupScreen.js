@@ -8,28 +8,35 @@ import {
   StatusBar,
   TextInput,
   KeyboardAvoidingView,
-  Image,
+  ActivityIndicator,
   Platform
 } from 'react-native';
 import {COLORS, SPACING  , FONTFAMILY , BORDERRADIUS , FONTSIZE } from '../theme/theme';
 import { AuthenticationContext } from '../context/AuthContext';
 
 const SignupScreen = ({navigation}) => {
-
+  
+  const [isLoading , setIsLoading] = useState(false);
   const [fullName,setFullName] = useState('');
   const [phoneNumber,setPhoneNumber] = useState('');
   const [userEmail, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { onRegister, error, isLoading  } = useContext(AuthenticationContext);
+  const { onRegister, error  } = useContext(AuthenticationContext);
   
   const handlePhoneNumberChange = (text) => {
-    // Validate input to only allow numbers
-    const regex = /^[0-9]*$/;
-    if (regex.test(text)) {
-      setPhoneNumber(text);
-    }
+    const numericText = text.replace(/[^0-9]/g, '');
+    const maxLength = 10;
+    const truncatedText = numericText.slice(0, maxLength);
+    setPhoneNumber(truncatedText);
   };
-  
+
+  const handleRegisterUser = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+     }, 1200);
+    onRegister(fullName , phoneNumber , userEmail , password)
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container} bounces={false}>
@@ -40,8 +47,6 @@ const SignupScreen = ({navigation}) => {
 
 
       <View className="flex  flex-col items-center justify-center mt-8" style={styles.loginContainer} >
-
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.icon_logo} />
 
       <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -143,12 +148,20 @@ const SignupScreen = ({navigation}) => {
 { /*  END SINGLE INPUT */ }
 
     <View className="flex items-center w-full" >
-    <TouchableOpacity
+
+    {isLoading ? (
+      <View  className="flex items-center justify-center my-5" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+    ) : (
+      <TouchableOpacity
         className="text-white mt-10 rounded-lg text-sm px-6 py-4 mr-2 mb-2 "
           style={styles.button}
-          onPress={() => onRegister(fullName , phoneNumber , userEmail , password)  }>
+          onPress={() => handleRegisterUser()  }>
           <Text style={styles.buttonText}>  انشاء حساب  </Text>
         </TouchableOpacity>
+    )}
+
 
     <TouchableOpacity
         className="text-white mt-5 text-sm px-6 py-4 "
@@ -222,7 +235,6 @@ const styles = StyleSheet.create({
     fontSize: FONTSIZE.size_14,
     color: COLORS.White,
     textAlign: 'right',
-
   },
   textAreaInput: {
     textAlignVertical: 'top',

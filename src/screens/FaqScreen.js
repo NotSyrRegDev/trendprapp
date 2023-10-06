@@ -1,32 +1,16 @@
 import * as React from 'react';
-import {Text, View, StyleSheet, StatusBar, Image , TouchableOpacity } from 'react-native';
+import {Text, View, StyleSheet, StatusBar, Image , TouchableOpacity , SafeAreaView } from 'react-native';
 import {COLORS, FONTFAMILY, FONTSIZE, SPACING , BORDERRADIUS} from '../theme/theme';
-import AppHeader from '../components/AppHeader';
 
 
 const FaqScreen = ({navigation}) => {
   return (
-    <View style={styles.container}>
-      <StatusBar hidden />
-    
-    
-      <View className="flex items-center justify-center mt-3 relative" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={'light-content'} />
 
-      <View className="absolute top-16 left-0" >
-      <AppHeader
-                name="close"
-                header={''}
-                action={() => navigation.goBack()}
-              />
-      </View>
-      </View>
 
-      <View className="mt-2" >
-      <Text style={styles.font} className="block text-white font-bold mb-2 text-2xl"  >
-       الاسئلة الشائعة
-        </Text>
-
+      <View  style={styles.appHeaderContainer} >
+      
       </View>
 
       <View className="flex items-center w-full" >
@@ -40,8 +24,12 @@ const FaqScreen = ({navigation}) => {
     </View>
 
 
+    
+
+
+
       
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -52,14 +40,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.Black,
     direction: 'rtl',
     paddingHorizontal: 25,
+  
   },
   appHeaderContainer: {
     marginHorizontal: SPACING.space_36,
     marginTop: SPACING.space_20 * 2,
   },
-  profileContainer: {
-    alignItems: 'center',
-  },
+
   avatarImage: {
     height: 80,
     width: 80,

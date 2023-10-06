@@ -1,4 +1,4 @@
-import  {useState , useEffect, useContext} from 'react'
+import  {useState , useEffect, useContext , useCallback} from 'react'
 import {
   Text,
   View,
@@ -7,9 +7,9 @@ import {
   StatusBar,
   ImageBackground,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
-  Modal
+  Modal,
+  AppState 
 } from 'react-native';
 import {
   BORDERRADIUS,
@@ -19,33 +19,35 @@ import {
   SPACING,
 } from '../theme/theme';
 import {LinearGradient} from 'expo-linear-gradient';
-import AppHeader from '../components/AppHeader';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {  query , collection , getDocs , db , where } from "../../firebase";
+import {  query , collection , getDocs , db , where  , getDoc , doc } from "../../firebase";
 import { AuthenticationContext } from '../context/AuthContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import Fontisto from 'react-native-vector-icons/Fontisto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppContext } from '../context/AppContext';
+import Animated, {
+  useAnimatedGestureHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring 
+} from "react-native-reanimated";
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+  PinchGestureHandler,
+} from "react-native-gesture-handler";
+import { useFocusEffect } from '@react-navigation/native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 
 const generateSeatsFromData = (data) => {
-  let rowArray = [];
+  const seatsPerRow = Math.floor(Math.sqrt(data.length)); // Calculate seats per row (you can adjust this logic)
+  const seatRows = [];
   let currentRow = [];
-  let currentRowNumber = null;
-  let numColumn = 0;
+  data.forEach((ticket, index) => {
+    const { ticket_seat, ticket_category, ticket_price, rel_event_id, ticket_offer } = ticket;
 
-  data && data.forEach((ticket) => {
-    const { ticket_seat, ticket_category , ticket_price , rel_event_id  , ticket_offer } = ticket;
-    const rowNumber = ticket_seat.substring(0, 2);
-
-    if (rowNumber !== currentRowNumber) {
-      if (currentRow.length > 0) {
-        rowArray.push(currentRow);
-        currentRow = [];
-      }
-      currentRowNumber = rowNumber;
-      numColumn = 1;
-    }
-
+ 
     const seatObject = {
       number: ticket_seat,
       taken: true, // or use a property from the ticket object if available
@@ -53,23 +55,30 @@ const generateSeatsFromData = (data) => {
       ticket_category: ticket_category,
       ticket_price: ticket_price,
       rel_event_id: rel_event_id,
-      ticket_offer: ticket_offer
+      ticket_offer: ticket_offer,
     };
 
     currentRow.push(seatObject);
-    numColumn++;
+
+    // If the current row is full or it's the last seat, add it to the seatRows array
+    if (currentRow.length === seatsPerRow || index === data.length - 1) {
+      seatRows.push(currentRow);
+      currentRow = [];
+    }
   });
 
-  if (currentRow.length > 0) {
-    rowArray.push(currentRow);
-  }
-
-  return rowArray;
+  return seatRows;
 };
 
 const SeatBookingScreen = ({navigation, route}) => {
 
+  const [movieData, setMovieData] = useState(null);
+
   const { isAuthenticated  , addOrder  , success  , error  ,setError , orderId} = useContext(AuthenticationContext);
+
+  const { setPackagedTickets } = useContext(AppContext);
+
+
 
   const capitalizeFirstLetter = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -82,7 +91,6 @@ const SeatBookingScreen = ({navigation, route}) => {
   const [ ticketsArray , setTicketsArray ] = useState([]);
   const [twoDSeatArray, setTwoDSeatArray] = useState([]);
   const [selectedSeatArray, setSelectedSeatArray] = useState([]);
-  const [selectedTimeIndex, setSelectedTimeIndex] = useState();
   const [showModel , setShowModel] = useState(false);
 
   // Function to handle seat selection
@@ -115,14 +123,11 @@ const SeatBookingScreen = ({navigation, route}) => {
   const handleRemoveItem = (index) => {
     const updatedSelectedSeatArray = [...selectedSeatArray];
     const removedItem = updatedSelectedSeatArray.splice(index, 1)[0];
-    console.log(removedItem);
-    
+ 
     // Reset any associated changes for the removed item
     const { number, category, price } = removedItem;
-    
     const seat = twoDSeatArray.flat().find((seat) => seat.number === number);
-    console.log(twoDSeatArray);
-    console.log(seat);
+   
     
     if (seat) {
       seat.selected = false;
@@ -135,26 +140,34 @@ const SeatBookingScreen = ({navigation, route}) => {
     setPrice(updatedSelectedSeatArray.length * price); // Recalculate the price
   };
 
-  useEffect(() => {
-    setIsLoading(true);
-  
-    const getTicketsData = async () => {
-      try {
-        const q = query(collection(db, "tickets"), where("rel_event_id", "==", route.params.eventId ) , where("ticket_offer" , "==" , route.params.timeId  ) );
-        const querySnapshot = await getDocs(q);
-        const showsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const getTicketsData = async () => {
+    try {
+      const q = query(
+        collection(db, "tickets"),
+        where("rel_event_id", "==", route.params.eventId),
+        where("ticket_offer", "==", route.params.timeId)
+      );
+      const querySnapshot = await getDocs(q);
+      const showsData = querySnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
 
-        setTicketsArray(showsData);
-        setTwoDSeatArray(generateSeatsFromData(showsData));
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    getTicketsData();
-  }, []);
+      setTicketsArray(showsData);
+      setTwoDSeatArray(generateSeatsFromData(showsData));
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+   useCallback(() => {
+      setIsLoading(true);
+      getTicketsData();
+    }, [route.params.eventId])
+  );
 
   const [userId, setUserId] = useState('');
   const [fullName,setFullName] = useState('');
@@ -172,25 +185,103 @@ const SeatBookingScreen = ({navigation, route}) => {
         setEmail(jsonPrsed.email);
 
       } catch (error) {
-          console.log(error);
+        
       }
     };
 
     getData();
   }, []);
 
+  useEffect(() => {
+    const getInfoFromFireStore = async () => {
+      const docRef = doc(db, "events", route.params.eventId );
+      const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setMovieData(docSnap.data());
+        } else {
+          setMovieData(null)
+        }
+    }
+    getInfoFromFireStore();
+  } , [route.params.eventId]);
+
 
   const addOrderButton = () => {
-   let order =  addOrder( userId , fullName , phoneNumber , userEmail  , price , selectedSeatArray , route.params.eventId );
-   
-    setTimeout(() => {
-      if (selectedSeatArray.length !== 0) {
-      navigation.push('BookingDetail');
+    setIsLoading(true);
+    if (selectedSeatArray.length !== 0) {
+      let order =  addOrder( userId , fullName , phoneNumber , userEmail  , price , selectedSeatArray , route.params.eventId  , () => {
+        navigation.navigate('BookingDetail');
+       });
     }
-     }, 2500);
+    else {
+      setError("يرجى أختيار تذاكر")
+    }
+  
+
+   
   
     
   }
+
+  const handleBookingGuest = () => {
+    setPackagedTickets([
+      {
+        'event_name': movieData?.event_name,
+        'event_date': movieData?.event_date,
+        'event_category': movieData?.event_category,
+        'event_id' : route.params.eventId
+      },
+      selectedSeatArray
+    ]);
+
+    navigation.navigate('PillingDetailScreen');
+  }
+  
+  const scale = useSharedValue(0.4); // Set the initial scale to 0.4
+const positionX = useSharedValue(0);
+const positionY = useSharedValue(0);
+
+const pinchHandler = useAnimatedGestureHandler({
+  onStart: (_, ctx) => {
+    // Store the initial scale value
+    ctx.scale = scale.value;
+  },
+  onActive: (event, ctx) => {
+    // Update the scale value based on the gesture
+    scale.value = event.scale * ctx.scale;
+  },
+});
+
+  // Gesture handler for pan (drag) gesture
+  const panHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx) => {
+      // Store the initial position
+      ctx.translationX = positionX.value;
+      ctx.translationY = positionY.value;
+    },
+    onActive: (event, ctx) => {
+      // Update the position based on the gesture
+      positionX.value = event.translationX + ctx.translationX;
+      positionY.value = event.translationY + ctx.translationY;
+    },
+  });
+
+  // Animated style for the red square
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: positionX.value },
+      { translateY: positionY.value },
+      { scale: scale.value },
+    ],
+  }));
+  const zoomIn = () => {
+    scale.value = withSpring(scale.value + 0.1, { damping: 2, stiffness: 70 }); // Adjust the damping and stiffness to your preference
+  };
+
+  const zoomOut = () => {
+    scale.value = withSpring(scale.value - 0.1, { damping: 2, stiffness: 70 }); // Adjust the damping and stiffness to your preference
+  };
+
 
 
   if (
@@ -201,11 +292,7 @@ const SeatBookingScreen = ({navigation, route}) => {
       style={styles.container}
       bounces={false}
       contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
-
-      <View className="flex items-center justify-center mt-2 sticky" >
-    <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-    </View>
+      <StatusBar barStyle={'light-content'} />
 
       <View style={styles.loadingContainer}>
         <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
@@ -219,7 +306,7 @@ const SeatBookingScreen = ({navigation, route}) => {
       style={styles.container}
       bounces={false}
       showsVerticalScrollIndicator={false}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
       { /*  IMAGE BACKGROUND */ }
       <View>
@@ -229,13 +316,7 @@ const SeatBookingScreen = ({navigation, route}) => {
           <LinearGradient
             colors={[COLORS.BlackRGB10, COLORS.Black]}
             style={styles.linearGradient}>
-            <View style={styles.appHeaderContainer}>
-              <AppHeader
-                name="close"
-                header={''}
-                action={() => navigation.goBack()}
-              />
-            </View>
+          
           </LinearGradient>
         </ImageBackground>
         <Text style={styles.screenText}>Screen this side</Text>
@@ -261,60 +342,132 @@ const SeatBookingScreen = ({navigation, route}) => {
             <Text style={styles.errorText}   >{success}</Text>
           </View>
         )}
+        <View className="flex-col flex items-center justify-center "  >
+
+        <Text style={styles.font} className="block text-white font-bold mt-8 mb-6 text-xl"  >
+      {route.params?.eventName}
+        </Text>
+
+        <Text className="text-white text-base mb-1" style={styles.font} > المسرح </Text>
+        <Text className="text-white text-base mb-5" style={styles.font} > STAGE </Text>
+        <ScrollView  >
+
+        <View className="w-96"  style={styles.stageBorer}>
+        <GestureHandlerRootView style={{ flex: 1 }} className="relative" >
+      <PanGestureHandler
+        onGestureEvent={panHandler}
+        minPointers={1}
+        maxPointers={1}
+      >
+        <Animated.View style={{ flex: 1 }}>
+          <PinchGestureHandler
+            onGestureEvent={pinchHandler}
+            minPointers={2}
+            maxPointers={2}
+          >
+            
+            <Animated.View
+                style={[
+                  {
+                    maxHeight: 270,
+                    width: '100%',
+                    alignSelf: "center",
+                  },
+                  animatedStyle,
+                ]}
+              >
+
+      <View style={styles.stageContainer} >
+      {twoDSeatArray.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.stageRow}>
+          {row.map((seat, seatIndex) => (
+            <TouchableOpacity
+              key={seatIndex}
+              onPress={() => {
+                selectSeat(
+                  rowIndex,
+                  seatIndex,
+                  seat.number,
+                  seat.ticket_category,
+                  seat.ticket_price
+                );
+              }}
+              style={[
+                styles.stageSeat,
+               { padding: 5} ,
+                {
+                  backgroundColor: seat.selected ? '#12a591' : 'transparent',
+                  borderColor:
+                    seat.ticket_category === 'bronze'
+                      ? '#CD7F32'
+                      : seat.ticket_category === 'silver'
+                      ? '#4FC3F7'
+                      : seat.ticket_category === 'gold'
+                      ? '#FFD700'
+                      : seat.ticket_category === 'vip'
+                      ? '#E91E63'
+                      : seat.ticket_category === 'platinum'
+                      ? '#7B1FA2'
+                      : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.stageSeatText,
+                  {
+                    color: seat.selected ? 'white' : 'white',
+                  },
+                ]}
+              >
+                {seat.number}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ))}
+
+   
 
 
-  {twoDSeatArray  &&  twoDSeatArray.map((row, rowIndex) => (
-    <View key={rowIndex} style={styles.seatRow}>
-      {row.map((seat, seatIndex) => {
-       
-        return (
-          <TouchableOpacity
-  key={seatIndex}
-  onPress={() => {
-    selectSeat(rowIndex, seatIndex, seat.number, seat.ticket_category , seat.ticket_price );
-  }}
->
-
-  <MaterialIcons
-    name="event-seat"
-    style={[
-      styles.seatIcon,
-      {
-        color: seat.selected ? '#12a591' : (
-          seat.ticket_category === 'bronze' ? '#CD7F32' :
-          seat.ticket_category === 'silver' ? '#4FC3F7' :
-          seat.ticket_category === 'gold' ? '#FFD700' :
-          seat.ticket_category === 'vip' ? '#E91E63' :
-          seat.ticket_category === 'platinum' ? '#7B1FA2' :
-          null
-        )
-      }
-    ]}
-  />
-</TouchableOpacity>
-        );
-      })}
     </View>
-  )) }
+
+              </Animated.View>
+
+          </PinchGestureHandler>
+        </Animated.View>
+      </PanGestureHandler>
+
+      <View className="absolute top-0 left-2" >
+      <TouchableOpacity onPress={zoomIn} style={styles.circleButton}  >
+          <FontAwesome name="plus" size={12} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={zoomOut} style={styles.circleButton} className="mt-3"  >
+          <FontAwesome name="minus" size={12} color="white" />
+        </TouchableOpacity>
+      </View>
+
+    </GestureHandlerRootView>
+
+
+  </View>
+        </ScrollView>
+      </View>
 </View>
         <View style={styles.seatRadioContainer}>
-          {/* <View style={styles.radioContainer}>
-          <Text style={styles.radioText}> متوفرة </Text>
-            <MaterialIcons name="event-seat" style={styles.radioIcon} />
-          
-          </View> */}
+         
           <View style={styles.radioContainer}>
           <Text style={styles.radioText}> مأخوذة </Text>
-            <MaterialIcons
-              name="event-seat"
+            <Fontisto
+              name="checkbox-passive"
               style={[styles.radioIcon, {color: COLORS.Grey}]}
             />
            
           </View>
           <View style={styles.radioContainer}>
           <Text style={styles.radioText}> تم الاختيار </Text>
-            <MaterialIcons
-              name="event-seat"
+            <Fontisto
+              name="checkbox-passive"
               style={[styles.radioIcon, {color: COLORS.DarkGreen}]}
             />
           
@@ -328,14 +481,22 @@ const SeatBookingScreen = ({navigation, route}) => {
       <View style={styles.buttonPriceContainer}>
         
         {isAuthenticated ? (
-          <TouchableOpacity className="px-2 py-2" style={styles.button} onPress={
+
+          isLoading ? (
+            <View  >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+          ) : (
+            <TouchableOpacity className="px-2 py-2" style={styles.button} onPress={
   () => addOrderButton()
         }>
           <Text style={styles.buttonText}> شراء التذاكر </Text>
         </TouchableOpacity>
+          )
+
         ) : (
           <TouchableOpacity className="px-2 py-2" style={styles.button} onPress={() => {
-          navigation.push('LoginScreen');
+            handleBookingGuest()
         }}>
           <Text style={styles.buttonText}> شراء التذاكر </Text>
         </TouchableOpacity>
@@ -344,8 +505,19 @@ const SeatBookingScreen = ({navigation, route}) => {
         <View style={styles.priceContainer}>
           <Text style={styles.price}> {price}.00 دينار </Text>
         </View>
+
+        
       </View>
 
+      <View className="mt-2 mx-8 mb-6" >
+      <TouchableOpacity
+        className="mt-4 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
+          style={styles.buttonBorder}
+          onPress={() => setShowModel(!showModel) }>
+          <Text style={styles.buttonText}>   اضغط لمشاهدة التذاكر المختارة </Text>
+        </TouchableOpacity>
+
+      </View>
     
      { /* model CONTAINER */ }
 
@@ -357,6 +529,7 @@ const SeatBookingScreen = ({navigation, route}) => {
 
         {selectedSeatArray && selectedSeatArray.map((item , index) => (
           <View key={index} className="flex flex-row items-center justify-between mt-3" >
+     
         <View style={styles.font} className="bg-gray-200 rounded-lg text-white p-2" >
         <Text style={styles.font} > {item.price} د.ك </Text>
          </View>
@@ -366,7 +539,27 @@ const SeatBookingScreen = ({navigation, route}) => {
         
 
         <Text className="text-white mx-2 text-base" style={styles.font}  > {capitalizeFirstLetter(item.category)} </Text>
-         <View style={styles.font} className="bg-green-500 rounded-lg text-white p-2" >
+        <View
+  style={[
+    styles.font,
+    {
+      backgroundColor:
+        item.category === 'bronze'
+          ? '#CD7F32'
+          : item.category === 'silver'
+          ? '#4FC3F7'
+          : item.category === 'gold'
+          ? '#FFD700'
+          : item.category === 'vip'
+          ? '#E91E63'
+          : item.category === 'platinum'
+          ? '#7B1FA2'
+          : '#12a591',
+          color: 'white',
+    },
+  ]}
+  className="rounded-lg text-white p-2"
+>
         <Text style={styles.font} > {item.number}  </Text>
          </View>
          <View className="mx-1" >
@@ -388,9 +581,6 @@ const SeatBookingScreen = ({navigation, route}) => {
 
             </ScrollView>
           </View>
-         
-
-
           {/* Button to close modal */}
           <TouchableOpacity
         className="mt-8 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
@@ -404,15 +594,7 @@ const SeatBookingScreen = ({navigation, route}) => {
      { /* END model CONTAINER */ }
   
 
-      <View className="mt-2" >
-      <TouchableOpacity
-        className="mt-4 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
-          style={styles.buttonBorder}
-          onPress={() => setShowModel(!showModel) }>
-          <Text style={styles.buttonText}>   اضغط لمشاهدة التذاكر المختارة </Text>
-        </TouchableOpacity>
-
-      </View>
+   
 </View>
     ) : (
       <View className="mx-6 mt-2 flex items-center justify-center h-96" >
@@ -461,18 +643,21 @@ const styles = StyleSheet.create({
     color: COLORS.WhiteRGBA15,
   },
   seatContainer: {
-    marginVertical: SPACING.space_20,
+    marginVertical: SPACING.space_10,
   },
   containerGap20: {
-    gap: SPACING.space_20,
+    gap: SPACING.space_10,
   },
   seatRow: {
+    
     flexDirection: 'row',
-    gap: SPACING.space_20,
+    gap: SPACING.space_18,
+    marginBottom: 10,
     justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   seatIcon: {
-    fontSize: FONTSIZE.size_24,
+    fontSize: FONTSIZE.size_20,
     color: COLORS.White,
   },
   seatRadioContainer: {
@@ -563,6 +748,15 @@ const styles = StyleSheet.create({
     borderColor: COLORS.DarkGreen,
     borderRadius: BORDERRADIUS.radius_25,
   },
+
+  stageBorer: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.Grey,
+    borderRadius: BORDERRADIUS.radius_25,
+    paddingHorizontal: 10,
+    paddingVertical: 20,
+  },
   button: {
     backgroundColor: COLORS.DarkGreen,
     borderRadius: BORDERRADIUS.radius_25,
@@ -615,7 +809,56 @@ const styles = StyleSheet.create({
   },
   whiteFont: {
     color: 'white',
-  }
+  },
+  seatIcon: {
+    fontSize: FONTSIZE.size_20,
+    color: COLORS.White,
+  },
+  seatRow: {
+    
+    flexDirection: 'row',
+    gap: SPACING.space_18,
+    marginBottom: 10,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  stageContainer: {
+    flexDirection: 'column', 
+  },
+  stageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Adjust this as needed to control spacing between seats
+    marginBottom: 10, // Add spacing between rows
+  },
+  stageSeat: {
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stageSeatText: {
+    fontSize: 18,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1,
+  },
+  circleButton: {
+    backgroundColor: COLORS.DarkGreen, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 35,
+    borderWidth: 1,
+    borderColor: COLORS.White,
+    padding: 3,
+  },
 
 });
 

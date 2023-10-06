@@ -1,17 +1,16 @@
-import  { useState , useEffect} from 'react'
+import  { useState , useEffect , useCallback} from 'react'
 import {
   Text,
   View,
   StyleSheet,
   ScrollView,
   StatusBar,
-  ImageBackground,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
   Dimensions,
   Modal,
-  FlatList
+  FlatList,
+  RefreshControl
 } from 'react-native';
 import {
   BORDERRADIUS,
@@ -20,16 +19,14 @@ import {
   FONTSIZE,
   SPACING,
 } from '../theme/theme';
-import {LinearGradient} from 'expo-linear-gradient';
-import AppHeader from '../components/AppHeader';
-import { AdminContext } from '../context/AdminContext';
 import {  query , collection , getDocs , db , where  , getDoc , doc } from "../../firebase";
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SubMovieCard from '../components/SubMovieCard';
-import MovieCard from '../components/MovieCard';
 import CategoryHeader from '../components/CategoryHeader';
+import { useFocusEffect } from '@react-navigation/native';
+
+
 
 const {width, height} = Dimensions.get('window');
 
@@ -54,27 +51,22 @@ const TicketScreen = ( {navigation, route} ) => {
        
       }
     };
-
     getData();
   }, []);
 
-  
-  useEffect(() => {
+  const getBookingsData = async () => {
     setIsLoading(true);
-  
-    const getBookingsData = async () => {
+    try {
       const q = query(collection(db, 'bookings'));
       const querySnapshot = await getDocs(q);
-    
+
       const bookingsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-    
-      // Retrieve event information for each booking
       const updatedBookingsData = await Promise.all(
         bookingsData.map(async (booking) => {
           const eventId = booking.rel_event_id;
           const eventDocRef = doc(db, 'events', eventId);
           const eventDocSnapshot = await getDoc(eventDocRef);
-    
+
           if (eventDocSnapshot.exists()) {
             return {
               ...booking,
@@ -85,13 +77,31 @@ const TicketScreen = ( {navigation, route} ) => {
           }
         })
       );
-      setIsLoading(false);
-      console.log(updatedBookingsData)
+
       setTicketsArray(updatedBookingsData);
-    };
+    } catch (error) {
+      // Handle error, if needed
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
-    getBookingsData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      getBookingsData();
+    }, [])
+  );
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = () => {
+    setTimeout(() => {
+      setRefreshing(false);
+      getBookingsData();
+      setIsLoading(true);
+    }, 2000);
+  };
+  
 
  
   const handleModalShow = (order) => {
@@ -116,11 +126,7 @@ const TicketScreen = ( {navigation, route} ) => {
       style={styles.container}
       bounces={false}
       contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
-
-      <View className="flex items-center justify-center mt-2 sticky" >
-    <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-    </View>
+      <StatusBar barStyle={'light-content'} />
 
       <View style={styles.loadingContainer}>
         <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
@@ -130,59 +136,47 @@ const TicketScreen = ( {navigation, route} ) => {
   }
 
   return (
+
+    <ScrollView
+  style={{backgroundColor:COLORS.Black }}
+      refreshControl={
+        <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor="white" 
+    />
+        }
+    >
+
     <ScrollView
       style={styles.container}
       bounces={false}
       showsVerticalScrollIndicator={false}>
-      <StatusBar hidden />
-
-      { /*  IMAGE BACKGROUND */ }
-      <View>
-        <ImageBackground
-          source={{uri: 'https://trend-pr.net/wp-content/themes/TrendTheme/images/movies/5.jpg'}}
-          style={styles.ImageBG}>
-          <LinearGradient
-            colors={[COLORS.BlackRGB10, COLORS.Black]}
-            style={styles.linearGradient}>
-            <View style={styles.appHeaderContainer}>
-              <AppHeader
-                name="close"
-                header={''}
-                action={() => navigation.goBack()}
-              />
-            </View>
-          </LinearGradient>
-        </ImageBackground>
-       
-      </View>
-
-      { /*  END IMAGE BACKGROUND */ }
+      <StatusBar barStyle={'light-content'} />
 
     <View className="mt-8 mx-6" >
    
     {ticketsArray && ticketsArray.length !== 0 ?
         (
           <View   >
-          <CategoryHeader title={'المسرحيات التي قمت بحجزها'} />
+          <CategoryHeader title={'التذاكر المحجوزة'} postion="center" />
           <FlatList
-      data={ticketsArray}
-      keyExtractor={(item) => item.id}
-      bounces={false}
-      snapToInterval={width * 0.7 + SPACING.space_36}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      decelerationRate={0}
-      contentContainerStyle={styles.containerGap36}
-      renderItem={({ item, index }) => {
+  data={ticketsArray}
+  keyExtractor={(item) => item.id}
+  showsHorizontalScrollIndicator={false}
+  bounces={false}
+  contentContainerStyle={styles.containerGap16}
+  numColumns={2}
+  renderItem={({ item, index }) => {
         const { order, eventData } = item;
         return (
           <View key={index}>
-            <MovieCard
+            <SubMovieCard
               shoudlMarginatedAtEnd={true}
               cardFunction={() => {
                 handleModalShow(order);
               }}
-              cardWidth={width * 0.7}
+              cardWidth={width / 2.2}
               isFirst={index === 0}
               title={eventData.event_name}
               imagePath={eventData.event_image}
@@ -192,8 +186,8 @@ const TicketScreen = ( {navigation, route} ) => {
           </View>
         );
       }}
-    />
-         
+/>
+
 
           <Modal transparent={true} visible={modalVisible} animationType="slide">
 
@@ -245,14 +239,14 @@ const TicketScreen = ( {navigation, route} ) => {
 
             <View className="flex felx-row items-center" >
       <TouchableOpacity
-        className="mt-2 text-center text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
+        className="mt-2 text-center text-white py-2 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-2  mb-2 w-full"
           style={styles.buttonBG}
           onPress={() => handleShowDetials() }>
           <Text style={styles.buttonText}>   مشاهدة التفاصيل </Text>
         </TouchableOpacity>
         
       <TouchableOpacity
-        className="mt-2 text-center text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
+        className="mt-2 text-center text-white py-2 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-2  mb-2 w-full"
           style={styles.buttonBorder}
           onPress={() => setModalVisible(!modalVisible) }>
           <Text style={styles.buttonText}>   اغلاق </Text>
@@ -283,7 +277,7 @@ const TicketScreen = ( {navigation, route} ) => {
           className="text-white text-center py-2 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mr-2 mb-2 w-56"
             style={styles.buttonBG}
             onPress={() => {
-              navigation.push('Tab');
+              navigation.navigate('HomeScreen');
             }}>
             <Text style={styles.buttonText}>  شراء تذاكر جديدة </Text>
           </TouchableOpacity>
@@ -293,6 +287,8 @@ const TicketScreen = ( {navigation, route} ) => {
 
 
      
+    </ScrollView>
+
     </ScrollView>
   );
 
@@ -386,7 +382,24 @@ const styles = StyleSheet.create({
     borderColor: COLORS.DarkGreen,
     borderRadius: BORDERRADIUS.radius_25,
   },
-
+  containerGap16: {
+    gap: SPACING.space_4,
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+    paddingTop: 5,
+    paddingBottom: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1,
+  },
+  
  });
 
 

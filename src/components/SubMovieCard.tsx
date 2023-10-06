@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   container: {
     display: 'flex',
     flex: 1,
-    backgroundColor: COLORS.Black,
+    backgroundColor: COLORS.BlackTheme,
     marginHorizontal: 10,
   },
   cardImage: {

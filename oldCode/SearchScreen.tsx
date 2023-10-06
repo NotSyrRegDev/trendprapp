@@ -29,7 +29,7 @@ const SearchScreen = ({navigation}: any) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
       <View>
         <FlatList

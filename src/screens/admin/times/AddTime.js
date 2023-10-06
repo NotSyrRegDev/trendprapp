@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState , useRef} from 'react';
 import {
   Text,
   View,
@@ -9,7 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Image,
-  Button,
+  ActivityIndicator,
   Platform
 } from 'react-native';
 import {COLORS, SPACING  , FONTFAMILY , BORDERRADIUS , FONTSIZE } from '../../../theme/theme';
@@ -23,7 +23,7 @@ import { AdminContext } from '../../../context/AdminContext';
 const AddTime = ({navigation , route}) => {
   
   
-
+  const [isLoading , setIsLoading] = useState();
   const [timeDate , setTimeDate] = useState(new Date());
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(() => {
@@ -56,19 +56,21 @@ const AddTime = ({navigation , route}) => {
   const { addShow , error  , success  } = useContext(AdminContext);
 
   const addOfferShow = (  )=> {
-    addShow(timeDate , startTime , endTime ,   timeAvaliablity , route.params.eventId);
-
-     
-        setTimeout( () => {
-          navigation.navigate('AdminDashboard')
-        } , 5500)
-     
-
-
+    setIsLoading(true);
+    addShow(timeDate , startTime , endTime ,   timeAvaliablity , route.params.eventId , () => {
+      navigation.navigate('AdminDashboard');
+      setIsLoading(false);
+    });
+       
   }
 
+  const scrollViewRef = useRef();
+
   return (
-    <ScrollView style={styles.container} bounces={false}>
+    <ScrollView style={styles.container} bounces={false}
+          ref={scrollViewRef}
+  contentContainerStyle={{ flexGrow: 1 }} 
+    >
       <StatusBar  />
 
    {  /* TOP HEader */}
@@ -98,15 +100,23 @@ const AddTime = ({navigation , route}) => {
       <View className="flex flex-col items-end mt-16" >
 
       {error && (
-          <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
+        <>
+        {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
+        <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{error}</Text>
           </View>
+        </>
+         
         )}
 
         {success && (
+          <>
+          {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
           <View className=" p-4 text-sm text-white rounded-lg bg-green-500 dark:bg-gray-800 dark:text-green-400 text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{success}</Text>
           </View>
+          </>
+        
         )}
 
    { /*  SINGLE INPUT */ }
@@ -231,12 +241,20 @@ const AddTime = ({navigation , route}) => {
 </View>
 { /*  END SINGLE INPUT */ }
 
-<TouchableOpacity
+{isLoading ?  (
+  <View  className="flex items-center justify-center" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+) : (
+  <TouchableOpacity
         className="mt-2 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() =>  addOfferShow() }>
           <Text style={styles.buttonText}>  اضافة العرض </Text>
         </TouchableOpacity>
+)}
+
+
 
 
 

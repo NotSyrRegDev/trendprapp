@@ -61,7 +61,7 @@ const ManageActors = ({navigation , route}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
+        <StatusBar barStyle={'light-content'} />
 
         {  /* TOP HEader */}
       <View className="flex flex-row items-center justify-between mt-16" >

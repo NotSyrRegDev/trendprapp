@@ -1,4 +1,4 @@
-import React, { useState , useContext} from 'react';
+import React, { useState , useContext , useRef} from 'react';
 import {
   Text,
   View,
@@ -9,7 +9,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Image,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import {COLORS, SPACING  , FONTFAMILY , BORDERRADIUS , FONTSIZE } from '../../../theme/theme';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -51,15 +52,22 @@ const AddActor = ({navigation , route}) => {
   }
 
   const handleAddingActor = () => {
-
-    addActor( actorName, actorJob , actorThum , route.params.eventId );
-    setTimeout( () => {
-      navigation.navigate('AdminDashboard')
-    } , 3500)
+    setIsLoading(true);
+    addActor( actorName, actorJob , actorThum , route.params.eventId , () => {
+      navigation.navigate('AdminDashboard');
+      setIsLoading(false);
+    } );
+   
   }
 
+  const scrollViewRef = useRef();
+
   return (
-    <ScrollView style={styles.container} bounces={false}>
+    <ScrollView style={styles.container} bounces={false}
+          
+  ref={scrollViewRef}
+  contentContainerStyle={{ flexGrow: 1 }} 
+    >
       <StatusBar  />
 
    {  /* TOP HEader */}
@@ -89,15 +97,23 @@ const AddActor = ({navigation , route}) => {
       <View className="flex flex-col items-end mt-16" >
 
       {error && (
-          <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
+        <>
+        {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
+        <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{error}</Text>
           </View>
+        </>
+         
         )}
 
         {success && (
+          <>
+          {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
           <View className=" p-4 text-sm text-white rounded-lg bg-green-500 dark:bg-gray-800 dark:text-green-400 text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{success}</Text>
           </View>
+          </>
+    
         )}
 
 { /*  SINGLE INPUT */ }
@@ -183,14 +199,17 @@ const AddActor = ({navigation , route}) => {
 </View>
 { /*  END SINGLE INPUT */ }
 
-{!isLoading && (
+{isLoading ?  (
+  <View  className="flex items-center justify-center" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+) : (
   <TouchableOpacity
         className="text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() => handleAddingActor() }>
           <Text style={styles.buttonText}> إضافة الممثل </Text>
         </TouchableOpacity>
-      
 )}
 
 

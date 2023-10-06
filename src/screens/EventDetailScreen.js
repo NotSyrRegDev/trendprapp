@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState , useCallback} from 'react';
 import {
   Text,
   View,
@@ -18,12 +18,13 @@ import {
   FONTSIZE,
   SPACING,
 } from '../theme/theme';
-import AppHeader from '../components/AppHeader';
 import {LinearGradient} from 'expo-linear-gradient';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import CategoryHeader from '../components/CategoryHeader';
 import CastCard from '../components/CastCard';
 import { getDoc , doc , db  , query , collection , getDocs , where } from '../../firebase';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 const MovieDetailsScreen = ({navigation, route}) => {
@@ -32,43 +33,48 @@ const MovieDetailsScreen = ({navigation, route}) => {
   const [ actorsArray , setActorsArray ] = useState([]);
   const [isLoading , setIsLoading] = useState();
 
-  useEffect(() => {
-    const getInfoFromFireStore = async () => {
-      const docRef = doc(db, "events", route.params.movieid );
-      const docSnap = await getDoc(docRef);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      setMovieData(null);
+  
+      const getInfoFromFireStore = async () => {
+        const docRef = doc(db, "events", route.params.movieid );
+        const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setMovieData(docSnap.data());
         } else {
-          setMovieData(null)
+          setMovieData(null);
         }
-    }
-    getInfoFromFireStore();
-  } , []);
-
-
-  
-  
-  useEffect(() => {
-    setIsLoading(true);
-  
-    const getActorsData = async () => {
-      try {
-        const q = query(collection(db, "actors") , where("rel_event_id", "==", route.params.movieid )  );
-        const querySnapshot = await getDocs(q);
-        const actorsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-
-        setActorsArray(actorsData);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
       }
-    };
+      getInfoFromFireStore();
+    }, [route.params.movieid])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      // Reset the state to its initial value
+      setIsLoading(true);
+      setActorsArray([]);
   
-    getActorsData();
-  }, []);
-
-
+      const getActorsData = async () => {
+        try {
+          const q = query(collection(db, "actors"), where("rel_event_id", "==", route.params.movieid));
+          const querySnapshot = await getDocs(q);
+          const actorsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  
+          setActorsArray(actorsData);
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+  
+      getActorsData();
+    }, [route.params.movieid])
+  );  
+  
   if (
    isLoading 
   ) {
@@ -78,13 +84,7 @@ const MovieDetailsScreen = ({navigation, route}) => {
         contentContainerStyle={styles.scrollViewContainer}
         bounces={false}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.appHeaderContainer}>
-          <AppHeader
-            name="close"
-            header={''}
-            action={() => navigation.goBack()}
-          />
-        </View>
+      
         <View style={styles.loadingContainer}>
           <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
         </View>
@@ -92,11 +92,14 @@ const MovieDetailsScreen = ({navigation, route}) => {
     );
   }
   return (
-    <ScrollView
+
+    <View style={{ flex: 1 }} >
+
+<ScrollView
       style={styles.container}
       bounces={false}
       showsVerticalScrollIndicator={false}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
    { /* TOP IMAGEBACKGROUNDWIth CArd */ }
    <View>
@@ -106,13 +109,13 @@ const MovieDetailsScreen = ({navigation, route}) => {
           <LinearGradient
             colors={[COLORS.BlackRGB10, COLORS.Black]}
             style={styles.linearGradient}>
-            <View style={styles.appHeaderContainer}>
+            {/* <View style={styles.appHeaderContainer}>
               <AppHeader
-                name="close"
+                name="chevron-left"
                 header={''}
                 action={() => navigation.goBack()}
               />
-            </View>
+            </View> */}
           </LinearGradient>
         </ImageBackground>
         <View style={styles.imageBG}></View>
@@ -178,27 +181,33 @@ const MovieDetailsScreen = ({navigation, route}) => {
       )}
        
 
-        <View  >
-
-
-          <TouchableOpacity
-        className="mt-3 text-white py-3  rounded-lg text-sm px-6  mb-2 w-full"
-          style={styles.buttonBG}
-          onPress={() => {
-              navigation.push('TimeBooking', {
-                BgImage: movieData?.event_banner,
-                PosterImage: movieData?.event_image,
-                eventId: route.params.movieid
-              });
-            }}
-          >
-          <Text style={styles.buttonText}> شراء التذاكر</Text>
-        </TouchableOpacity>
-        </View>
+     
       </View>
 
       { /* End Cast SEction */ }
     </ScrollView>
+
+       <View style={{ backgroundColor: COLORS.Black }}  >
+
+
+<TouchableOpacity
+className="mt-3 text-white  py-3  rounded-lg text-sm px-6  mb-2 w-full -translate-y-5"
+style={styles.buttonBG}
+onPress={() => {
+    navigation.navigate('TimeBooking', {
+      BgImage: movieData?.event_banner,
+      PosterImage: movieData?.event_image,
+      eventId: route.params.movieid,
+      eventName: movieData?.event_name,
+    });
+  }}
+>
+<Text style={styles.buttonText}> شراء التذاكر</Text>
+</TouchableOpacity>
+</View>
+
+    </View>
+  
   );
 };
 

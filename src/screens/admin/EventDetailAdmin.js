@@ -77,13 +77,7 @@ const EventDetailAdmin = ({navigation, route}) => {
         contentContainerStyle={styles.scrollViewContainer}
         bounces={false}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.appHeaderContainer}>
-          <AppHeader
-            name="close"
-            header={''}
-            action={() => navigation.goBack()}
-          />
-        </View>
+      
         <View style={styles.loadingContainer}>
           <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
         </View>
@@ -95,7 +89,7 @@ const EventDetailAdmin = ({navigation, route}) => {
       style={styles.container}
       bounces={false}
       showsVerticalScrollIndicator={false}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
    { /* TOP IMAGEBACKGROUNDWIth CArd */ }
       <View>

@@ -4,11 +4,10 @@
     "slug": "trend-pr",
     "description": "This is an awesome app.",
     "version": "1.0.0",
-    "permissions": [
-      "CAMERA",
-      "MEDIA_LIBRARY"
+    "platforms": [
+      "ios",
+      "android"
     ],
-    "platforms": ["ios", "android"],
     "orientation": "portrait",
     "icon": "./assets/icon-pr.png",
     "userInterfaceStyle": "light",
@@ -25,6 +24,9 @@
       "bundleIdentifier": "com.notregsyrdev.trendpr",
       "infoPlist": {
         "NSPhotoLibraryAddUsageDescription": "Save screenshots to the camera roll"
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -32,9 +34,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "WRITE_EXTERNAL_STORAGE"
-      ]
+      "package": "com.notregsyrdev.trendpr",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,6 +44,10 @@
       "eas": {
         "projectId": "f9ca821d-a9ad-4071-9917-52c02e741007"
       }
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/f9ca821d-a9ad-4071-9917-52c02e741007"
     }
   }
 }

@@ -30,7 +30,6 @@ const ManageTickets = ({navigation , route}) => {
         const q = query(collection(db, "shows"), where("rel_event_id", "==", route.params.eventId ) );
         const querySnapshot = await getDocs(q);
         const showsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-        console.log(showsData)
         setShowsArray(showsData);
       } catch (error) {
         setError(error.message);
@@ -52,7 +51,7 @@ const ManageTickets = ({navigation , route}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
+        <StatusBar barStyle={'light-content'} />
 
         {  /* TOP HEader */}
       <View className="flex flex-row items-center justify-between mt-16" >
@@ -105,18 +104,14 @@ const ManageTickets = ({navigation , route}) => {
         </Text>
 
         <Text style={styles.font} className="block text-white font-bold mt-8 mb-2 text-xl"  >
-    اختر العرض
+      العروض المتوفرة
         </Text>
 
         <View className="flex flex-col mt-2" >
 
         {showsArray && showsArray.length !== 0 ? showsArray.map(({ show_status , show_start_time , show_end_time , show_date  , id}) => (
 
-          <TouchableOpacity key={id} className="w-full flex-row justify-around items-center p-4  text-sm rounded-lg  bg-gray-800 border border-blue-100 mb-5" onPress={() => navigation.navigate('TicketsView' , {
-            eventId:   route.params.eventId,
-            offerId: id,
-            eventName: route.params.eventName
-          }) } >
+          <View key={id} className="w-full flex-row justify-around items-center p-4  text-sm rounded-lg  bg-gray-800 border border-blue-100 mb-5"  >
 
           <View>
             <Text className="text-white text-lg" style={styles.font} > 
@@ -134,7 +129,7 @@ const ManageTickets = ({navigation , route}) => {
           <View>
           <Fontisto  name="date"   size={28}    style={[styles.starIcon]}   />
           </View>
-          </TouchableOpacity>
+          </View>
 
           )) : (
           <Text style={styles.font} className="bg-red-500 mt-5 p-2 w-96 rounded-full block text-white font-bold mb-10 text-lg"  >
@@ -156,7 +151,7 @@ const ManageTickets = ({navigation , route}) => {
        ) : (
         <View>
         <Text style={styles.font} className="bg-green-500 mt-5 p-2 w-96 rounded-full block text-white font-bold mb-3 text-base"  >
-         يجب عليك اضافة عروض للتمكن من اضافة التذاكر
+         يجب عليك اضافة عروض لتتمكن من اضافة التذاكر
           </Text>
 
           <TouchableOpacity

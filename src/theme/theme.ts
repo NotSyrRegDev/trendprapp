@@ -45,15 +45,17 @@ interface Color {
   WhiteRGBA15: string;
   Green: string;
   DarkGreen: string;
+  BlackTheme: string;
+  NavTheme: string;
 }
 
 export const COLORS: Color = {
-  Black: '#020404',
+  Black: '#1a1a21',
   BlackRGB10: 'rgba(0,0,0,0.1)',
   Orange: '#FF5524',
   OrangeRGBA0: 'rgba(255,85,36,0)',
   Grey: '#333333',
-  DarkGrey: '#0b0b0b',
+  DarkGrey: '#1a1a21',
   Yellow: '#E1CD17',
   White: '#FFFFFF',
   WhiteRGBA75: 'rgba(255,255,255,0.75)',
@@ -62,6 +64,8 @@ export const COLORS: Color = {
   WhiteRGBA15: 'rgba(255,255,255,0.15)',
   Green: '#0eff85',
   DarkGreen: '#12a591',
+  BlackTheme: '#1a1a21',
+  NavTheme: '#262630',
 
 };
 

@@ -1,4 +1,4 @@
-import React, { useContext, useState} from 'react';
+import React, { useContext, useState , useRef} from 'react';
 import {
   Text,
   View,
@@ -9,8 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Image,
-  Platform,
-  Button
+  ActivityIndicator
 } from 'react-native';
 import {COLORS, SPACING  , FONTFAMILY , BORDERRADIUS , FONTSIZE } from '../../../theme/theme';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -18,6 +17,7 @@ import { AdminContext } from '../../../context/AdminContext';
 import * as ImagePicker from 'expo-image-picker';
 import RNPickerSelect from 'react-native-picker-select';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { AppContext } from '../../../context/AppContext';
 
 
 
@@ -35,6 +35,9 @@ const  AddEvent = ({navigation}) => {
   const [eventBanner , setEventBanner] = useState('');
   const [selectedImageThum, setSelectedImageThum] = useState(null);
   const [selectedImageBanner, setSelectedImageBanner] = useState(null);
+  const [selectedCategory , setSelectedCategory] = useState('');
+  const [tagsEventsArray , setTagsEventsArray] = useState([]);
+  const [productTag , setProductTag] = useState('');
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || timeDate;
@@ -43,63 +46,103 @@ const  AddEvent = ({navigation}) => {
 
   const { addEvent , error  , success , setError , uploadImage } = useContext(AdminContext);
 
+  const { categoryArray } = useContext(AppContext);
+
+  const handleAddTags = () => {
+    if (productTag !== '') {
+      setTagsEventsArray(prevArray => [...prevArray, productTag]);
+      setProductTag('');
+    }
+    else {
+      setError("يرجى ادخال نص الدلالة")
+    }
+  
+  };
+
  
   const handleChooseImageThum = async () => {
-    setIsLoading(true)
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      setError("يرجى اعطاء الاذن بالوصول للمعرض");
-      setIsLoading(false);
-      return;
-    }
-    const pickerResult = await ImagePicker.launchImageLibraryAsync();
 
-    if (pickerResult.cancelled === true) {
-      setError("يرجى اكمال العملية");
-      setIsLoading(false);
-    } else {
-      setSelectedImageThum(pickerResult.uri);
-     let imageThum =  uploadImage(pickerResult.uri);
-     setEventImage(imageThum);
-     setIsLoading(false);
+    try {
 
+      setIsLoading(true)
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        setError("يرجى اعطاء الاذن بالوصول للمعرض");
+        setIsLoading(false);
+        return;
+      }
+      const pickerResult = await ImagePicker.launchImageLibraryAsync();
+  
+      if (pickerResult.canceled === true) {
+        setError("يرجى اكمال العملية");
+        setIsLoading(false);
+      } else {
+        setSelectedImageThum(pickerResult.uri);
+       let imageThum =  uploadImage(pickerResult.uri);
+       setEventImage(imageThum);
+       setIsLoading(false);
+  
+      }
+      
     }
+
+    catch (error) {
+      console.error("An error occurred:", error);
+      setError("An unexpected error occurred");
+      setIsLoading(false);
+    }
+
+   
   };
 
   const handleChooseImageBanner = async () => {
-    setIsLoading(true);
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) {
-      setError("يرجى اعطاء الاذن بالوصول للمعرض");
-      setIsLoading(false);
-      return;
-    }
-    const pickerResult = await ImagePicker.launchImageLibraryAsync();
 
-    if (pickerResult.cancelled === true) {
-      setError("يرجى اكمال العملية");
-      setIsLoading(false);
-    } else {
-      setSelectedImageBanner(pickerResult.uri);
-      let imageBanner =  uploadImage(pickerResult.uri);
-      setEventBanner(imageBanner);
+    try {
+      setIsLoading(true);
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        setError("يرجى اعطاء الاذن بالوصول للمعرض");
+        setIsLoading(false);
+        return;
+      }
+      const pickerResult = await ImagePicker.launchImageLibraryAsync();
+  
+      if (pickerResult.canceled === true) {
+        setError("يرجى اكمال العملية");
+        setIsLoading(false);
+      } else {
+        setSelectedImageBanner(pickerResult.uri);
+        let imageBanner =  uploadImage(pickerResult.uri);
+        setEventBanner(imageBanner);
+        setIsLoading(false);
+      }
+    }
+    catch (error) {
+      console.error("An error occurred:", error);
+      setError("An unexpected error occurred");
       setIsLoading(false);
     }
+   
   };
 
   const addNewEvent = () => {
-    addEvent(eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventImage , eventBanner );
-
-    setTimeout( () => {
+    setIsLoading(true);
+    addEvent(eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventImage , eventBanner , selectedCategory , tagsEventsArray  , () => {
       navigation.navigate('AdminDashboard')
-    } , 5500)
+      setIsLoading(false);
+    });
 
+  
   }
 
-
+  const scrollViewRef = useRef();
 
   return (
-    <ScrollView style={styles.container} bounces={false}>
+    <ScrollView style={styles.container} bounces={false}  
+      
+  ref={scrollViewRef}
+  contentContainerStyle={{ flexGrow: 1 }} 
+    >
       <StatusBar  />
 
    {  /* TOP HEader */}
@@ -123,19 +166,27 @@ const  AddEvent = ({navigation}) => {
     
       { /* INPUTS DASHBOARD */  }
       <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      
     >
 
       {error && (
-                <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
+        <>
+        {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
+        <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{error}</Text>
           </View>
+        </>
+               
         )}
 
         {success && (
+          <>
+          {scrollViewRef.current.scrollTo({ y: 0, animated: true })}
           <View className=" p-4 text-sm text-white rounded-lg bg-green-500 dark:bg-gray-800 dark:text-green-400 text-right mb-5 flex items-end" >
             <Text style={styles.errorText}  >{success}</Text>
           </View>
+          </>
+
         )}
 
       <View className="flex flex-col items-end mt-12 mb-5" >
@@ -201,6 +252,36 @@ const  AddEvent = ({navigation}) => {
 { /*  SINGLE INPUT */ }
 <View className="mb-8 " >
 <Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
+تصنيف المسرحية <Text className="text-red-500 text-base" > * </Text>  
+</Text>
+
+<RNPickerSelect
+  style={pickerSelectStyles}
+  pickerProps={{
+    accessibilityLabel: selectedCategory,
+  }}
+  placeholder={{
+    label: 'اختر',
+    value: '',
+  }}
+  selectedValue={selectedCategory }
+  onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+  items={categoryArray.map((show) => ({
+    label: show.category,
+    value: show.category,
+  }))}
+>
+</RNPickerSelect>
+
+
+
+
+</View>
+{ /*  END SINGLE INPUT */ }
+
+{ /*  SINGLE INPUT */ }
+<View className="mb-8 " >
+<Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
 حالة المسرحية <Text className="text-red-500 text-base" > * </Text>  
 </Text>
 
@@ -247,6 +328,54 @@ const  AddEvent = ({navigation}) => {
 
 </View>
 { /*  END SINGLE INPUT */ }
+
+
+<View className="mb-2 " >
+<Text style={styles.textInput} className="block text-gray-700 font-bold mb-2" htmlFor="username">
+ دلالة المسرحية <Text className="text-red-500 text-base" > * </Text>  
+</Text>
+
+<View className="realtive" >
+
+<View style={styles.inputBox} >
+ 
+  <TextInput
+  style={styles.inputStyle}
+  className="appearance-none border rounded-xl w-full py-0 px-1 text-gray-700 leading-tight "
+  id="title"
+  placeholder="قم بادخل دلالات المسرحية"
+  onChangeText={(text) => setProductTag(text) }
+  value={productTag}
+
+  />
+</View>
+
+<View className="absolute top-2 left-8 " >
+
+<TouchableOpacity
+className="text-center rounded-full px-4 py-2"
+style={styles.button}
+onPress={() => handleAddTags() }
+>
+
+<Text style={styles.buttonText}> اضافة  </Text>
+</TouchableOpacity>
+
+</View>
+</View>
+
+</View>
+
+<View className="mb-8 flex flex-row items-end justify-end flex-wrap mt-2" >
+{tagsEventsArray && tagsEventsArray.map((item , index) => (
+<View key={index} className="rounded-full w-24 mx-1 py-2 text-center mt-2" style={styles.buttonTag} >
+<Text className="text-xs text-white " style={styles.buttonText} >  {item}  </Text>
+</View>
+
+)) }
+
+</View>
+
 
 { /*  SINGLE INPUT */ }
 <View className="mb-8 " >
@@ -313,8 +442,12 @@ const  AddEvent = ({navigation}) => {
 
 { /*  END SINGLE INPUT */ }
 
-  {!isLoading && (
-    <TouchableOpacity
+  {isLoading ? (
+    <View  className="flex items-center justify-center" >
+          <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+        </View>
+  ) : (
+        <TouchableOpacity
         className="mt-2 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() =>  addNewEvent() }>
@@ -447,6 +580,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.DarkGreen,
     borderRadius: BORDERRADIUS.radius_25,
+  },
+  buttonTag: {
+    borderColor: 'none',
+    backgroundColor: COLORS.DarkGreen,
+    opacity: 0.6
   },
 
 });

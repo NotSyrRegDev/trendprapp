@@ -1,9 +1,10 @@
-import  React , {useContext , useState , useEffect} from 'react';
+import  React , {useContext , useState , useEffect , useCallback} from 'react';
 import {Text, View, StyleSheet, StatusBar, Image , TouchableOpacity} from 'react-native';
 import {COLORS, FONTFAMILY, FONTSIZE, SPACING , BORDERRADIUS} from '../../theme/theme';
 import SettingComponent from '../../components/SettingComponent';
 import { AuthenticationContext } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 const UserAccountAuth = ({navigation}) => {
@@ -11,30 +12,28 @@ const UserAccountAuth = ({navigation}) => {
   const { onLogout } = useContext(AuthenticationContext);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const value = await AsyncStorage.getItem('trendpr_user');
-        setUser(JSON.parse(value));
-      } catch (error) {
-       
-      }
-    };
-
-    getData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const getData = async () => {
+        try {
+          const value = await AsyncStorage.getItem('trendpr_user');
+          setUser(JSON.parse(value));
+        } catch (error) {
+          // Handle error, if needed
+        }
+      };
+  
+      getData();
+    }, [])
+  );
 
   
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden />
-    
-      <View className="flex items-center justify-center mt-2 sticky" >
-      <Image source={require('../../assets/icons/logo_color_white.png')} style={styles.logo} />
-      </View>
+      <StatusBar barStyle={'light-content'} />
 
-      <View className="mt-2" >
+      <View className="pt-12" >
         <View style={styles.profileContainer}>
         <Image
           source={require('../../assets/image/avatar.png')}
@@ -117,8 +116,8 @@ const styles = StyleSheet.create({
   },
   logo: {
     resizeMode: 'cover',
-    maxHeight: 100,
-    maxWidth: 320,
+    maxHeight: 80,
+    maxWidth: 240,
   },
   font: {
     fontWeight: 'bold',

@@ -78,11 +78,12 @@ const EditActor = ({navigation , route}) => {
   }
 
   const handleEditActor = () => {
-
-    editActor( actorName, actorJob , actorThum , route.params.editId );
-    setTimeout( () => {
-      navigation.navigate('AdminDashboard')
-    } , 3500)
+    setIsLoading(true);
+    editActor( actorName, actorJob , actorThum , route.params.editId , () => {
+      navigation.navigate('AdminDashboard');
+      setIsLoading(false);
+    } );
+  
   }
 
   if (
@@ -93,7 +94,7 @@ const EditActor = ({navigation , route}) => {
       style={styles.container}
       bounces={false}
       contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
       <View className="flex items-center justify-center mt-2 sticky" >
     <Image source={require('../../../assets/icons/logo_color_white.png')} style={styles.logo} />

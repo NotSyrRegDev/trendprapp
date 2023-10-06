@@ -60,7 +60,7 @@ const ManageTimes = ({navigation , route}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
+        <StatusBar barStyle={'light-content'} />
 
         {  /* TOP HEader */}
       <View className="flex flex-row items-center justify-between mt-16" >
@@ -345,6 +345,14 @@ const styles = StyleSheet.create({
     fontFamily: FONTFAMILY.cairo_bold,
     textAlign: 'right',
     color: COLORS.White
+  },
+  loadingContainer: {
+    flex: 1,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1,
   },
  
 });

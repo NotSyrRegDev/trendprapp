@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   },
   iconStyle: {
     color: COLORS.White,
-    fontSize: FONTSIZE.size_24,
+    fontSize: 26,
   },
   headerText: {
     flex: 1,

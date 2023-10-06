@@ -54,12 +54,12 @@ const MovieCard = (props: any) => {
         />
 
         <View>
-          <View style={styles.rateContainer}>
+          {/* <View style={styles.rateContainer}>
             <MaterialIcons name="star" style={styles.starIcon} />
             <Text style={styles.voteText}>
               {props.vote_average} 
             </Text>
-          </View>
+          </View> */}
 
           <Text numberOfLines={1} style={styles.textTitle}>
             {props.title}
@@ -76,13 +76,14 @@ const styles = StyleSheet.create({
   container: {
     display: 'flex',
     flex: 1,
-    backgroundColor: COLORS.Black,
+    backgroundColor: COLORS.BlackTheme,
   },
   cardImage: {
     aspectRatio: 2 / 3,
     borderRadius: BORDERRADIUS.radius_20,
   },
   textTitle: {
+    marginTop: 5,
     fontFamily: FONTFAMILY.tajawal_light,
     fontSize: FONTSIZE.size_24,
     color: COLORS.White,

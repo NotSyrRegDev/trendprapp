@@ -33,10 +33,10 @@ const BookingDetailScreen = ({navigation, route}) => {
       const asset = await MediaLibrary.createAssetAsync(uri);
       await MediaLibrary.saveToLibraryAsync(asset);
 
-      console.log('Screenshot saved');
+    
 
     } catch (error) {
-      console.log('Error capturing screenshot:', error);
+     
     }
   };
   
@@ -44,7 +44,7 @@ const BookingDetailScreen = ({navigation, route}) => {
     <SafeAreaView
     style={styles.container}
 >
-    <StatusBar hidden />
+    <StatusBar barStyle={'light-content'} />
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} >
    
 

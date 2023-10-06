@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext } from "react";
-import { onAuthStateChanged , signInWithEmailAndPassword , auth  , setDoc , createUserWithEmailAndPassword , doc , db, signOut  , where , query , collection , getDocs , updateDoc } from '../../firebase';
+import { onAuthStateChanged , signInWithEmailAndPassword , auth  , setDoc , createUserWithEmailAndPassword , doc , db, signOut  , where , query , collection , getDocs , updateDoc  , or} from '../../firebase';
 export const AuthenticationContext = createContext();
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AuthContextProvider = ({ children }) => {
  
+  const [foundedMovies , setFoundedMovies] = useState([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
@@ -14,7 +16,7 @@ export const AuthContextProvider = ({ children }) => {
   onAuthStateChanged(auth,  async (usr) => {
     const value = await AsyncStorage.getItem('trendpr_user');
     let jsonPrsed = JSON.parse(value);
-    console.log(jsonPrsed);
+
     setIsAdmin(jsonPrsed.admin);
     if (usr) {
       setUser(usr);
@@ -39,9 +41,27 @@ export const AuthContextProvider = ({ children }) => {
    return result;
 }
 
+  const searchMovie  = async (searchVar) => {
+    try {
+      const q = query(collection(db, 'events'),
+      or(
+        where('event_name', '==', searchVar),
+        where('tags', 'array-contains', searchVar)
+      )
+      );
+      const querySnapshot = await getDocs(q);
+      const matchingProducts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      console.log('Search Query:', searchVar);
+      console.log('Matching Products:', matchingProducts);
+      setFoundedMovies(matchingProducts);
+    } catch (error) {
+      console.error('Error in search:', error);
+      // Handle the error as needed (e.g., show an error message to the user).
+    }
+    
+  };
 
   const onLogin =  ( email , password ) => {
-
     setIsLoading(true);
     if (email == '' ) {
       setError("يرجى ادخال الايميل الخاص بك");
@@ -64,7 +84,7 @@ export const AuthContextProvider = ({ children }) => {
 
   
     signInWithEmailAndPassword(auth, email, password)
-      .then(  async (user) => {
+      .then(  async (userCredential) => {
 
         const q = query(collection(db, "users"), where("email", "==", email ) );
    
@@ -104,19 +124,24 @@ export const AuthContextProvider = ({ children }) => {
          }
       }
       else {
-        setError("لم نعثر على المستخدم")
+        setError("لم نعثر على المستخدم");
+        setTimeout(() => {
+          setError('');
+        } , 3000);
       }
         setIsLoading(false);
       })
       .catch((e) => {
         setIsLoading(false);
         setError(e.toString());
+        setTimeout(() => {
+          setError('');
+        } , 3000);
       });
   }
  
   const onRegister = async (fullName , phoneNumber , userEmail , password) => {
     setIsLoading(true);
-
 
     if (fullName == '' ) {
       setError("يرجى ادخال اسمك الكامل");
@@ -202,6 +227,91 @@ export const AuthContextProvider = ({ children }) => {
         } else {
           setError(e.toString());
         }
+        setTimeout(() => {
+          setError('');
+        } , 3000);
+
+      });
+
+   }
+ 
+  const onAddAdmin = async (fullName , phoneNumber , userEmail , password) => {
+    setIsLoading(true);
+
+    if (fullName == '' ) {
+      setError("يرجى ادخال اسمك الكامل");
+       setTimeout(() => {
+      setError('');
+      
+    } , 3000);
+      return;
+    }
+
+    if (phoneNumber == '' ) {
+      setError("يرجى ادخال رقم الهاتف");
+       setTimeout(() => {
+      setError('');
+      
+    } , 3000);
+      return;
+    }
+
+    if (userEmail == '' ) {
+      setError("يرجى ادخال الايميل الخاص بك");
+       setTimeout(() => {
+      setError('');
+      
+    } , 3000);
+      return;
+    }
+
+    if (password == '' ) {
+      setError("يرجى ادخال كلمة المرور الخاصة بك");
+       setTimeout(() => {
+      setError('');
+      
+    } , 3000);
+      return;
+    }
+
+      let idMaked = makeid(20);
+  const users = await setDoc(doc(db, "users", idMaked ), {
+    full_name: fullName,
+    phone_number: phoneNumber,
+    email: userEmail,
+    role: 'admin',
+
+    });
+
+    createUserWithEmailAndPassword(auth, userEmail, password)
+      .then( async (userCredential) => {
+        setSuccess("تمت اضافة الحساب بنجاح")
+        setIsLoading(false);
+     
+       
+      })
+      .catch((e) => {
+        setIsLoading(false);
+       
+        if (e.code === "auth/email-already-in-use") {
+          setError("الايميل موجود بالفعل , يرجى تسجيل الدخول");
+        } else if (e.code === "auth/invalid-email") {
+          setError("الايميل غير صحيح , يرجى كتابة الايميل بشكل صحيح");
+        } 
+         else if (e.code === "auth/weak-password") {
+          setError("كلمة المرور ضعيفة يرجى ادخال كلمة مرور أقوى");
+        } else if (e.code === "auth/network-request-failed") {
+          setError("حدث خطأ في الشبكة");
+        } else if (e.code === "auth/too-many-requests") {
+          setError("تم تجاوز عدد المحاولات المسموح به , يرجى المحاولة في وقت أخر");
+        } else if (e.code === "auth/user-disabled") {
+          setError("تم تعطيل حسابك , يرجى التواصل مع الدعم");
+        } else {
+          setError(e.toString());
+        }
+        setTimeout(() => {
+          setError('');
+        } , 3000);
 
       });
 
@@ -215,7 +325,7 @@ export const AuthContextProvider = ({ children }) => {
     });
   };
 
-  const addOrder = async ( uid , name , email , phone , fullPrice , tickets , eventId ) => {
+  const addOrder = async ( uid , name , email , phone , fullPrice , tickets , eventId , callBack ) => {
     setIsLoading(true);
     
     if (fullPrice == 0 || tickets == [] ) {
@@ -244,6 +354,9 @@ export const AuthContextProvider = ({ children }) => {
       setSuccess("تمت اضافة عملية الحجز بنجاح");
       setTimeout( () => {
         setSuccess('');
+        if (callBack) {
+          callBack();
+        }
       } , 2500 );
     }
     catch (error) {
@@ -257,7 +370,7 @@ export const AuthContextProvider = ({ children }) => {
 
   }
 
-  const editUserProfile = async ( id , fullName , email , phoneNumber ) => {
+  const editUserProfile = async ( id , fullName , email , phoneNumber , callBack ) => {
 
     setIsLoading(true);
 
@@ -308,10 +421,13 @@ export const AuthContextProvider = ({ children }) => {
    await updateDoc(docRef, data);
 
     setSuccess("تم بنجاح تعديل معلوماتك");
-    setIsLoading(false);
+   
     setTimeout(() => {
       setSuccess(null);
-      
+      if (callBack) {
+        callBack();
+      }
+      setIsLoading(false);
     } , 3000);
 
   }
@@ -330,6 +446,9 @@ export const AuthContextProvider = ({ children }) => {
         onRegister,
         addOrder,
         onLogout,
+        searchMovie,
+        foundedMovies,
+        onAddAdmin
         
        }}
     >

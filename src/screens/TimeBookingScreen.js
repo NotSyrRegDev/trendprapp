@@ -1,4 +1,4 @@
-import  {useContext, useState , useEffect} from 'react'
+import  {useContext, useState , useEffect , useCallback } from 'react'
 import {
   Text,
   View,
@@ -22,11 +22,43 @@ import AppHeader from '../components/AppHeader';
 import { AdminContext } from '../context/AdminContext';
 import {  query , collection , getDocs , db , where } from "../../firebase";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { DrawerActions } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
+
+
 
 const TimeBookingScreen = ( {navigation, route} ) => {
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedId , setSelectedId] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+
+      setSelectedId('');
+      setSelectedItem(null);
+
+      const getTimesData = async () => {
+        try {
+          setIsLoading(true);
+          const q = query(collection(db, "shows"), where("rel_event_id", "==", route.params.eventId ) );
+          const querySnapshot = await getDocs(q);
+          const showsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+         
+          setShowsArray(showsData);
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setIsLoading(false);
+        }
+        
+      };
+    
+      getTimesData();
+  
+    
+    }, [route.params.eventId])
+  );
  
 
   const handleSelectItem = (index , id) => {
@@ -44,27 +76,7 @@ const TimeBookingScreen = ( {navigation, route} ) => {
   const [isLoading , setIsLoading] = useState();
   const [ showsArray , setShowsArray ] = useState([]);
   const { convertDateToArabic , convertTimeToHourMinuteString } = useContext(AdminContext);
-  
-  useEffect(() => {
-    setIsLoading(true);
-  
-    const getTimesData = async () => {
-      try {
-        setIsLoading(true);
-        const q = query(collection(db, "shows"), where("rel_event_id", "==", route.params.eventId ) );
-        const querySnapshot = await getDocs(q);
-        const showsData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-       
-        setShowsArray(showsData);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    getTimesData();
-  }, []);
+
 
   if (
     isLoading
@@ -72,14 +84,10 @@ const TimeBookingScreen = ( {navigation, route} ) => {
     return (
       <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.scrollViewContainer}
       bounces={false}
-      contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
-
-      <View className="flex items-center justify-center mt-2 sticky" >
-    <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-    </View>
-
+      showsVerticalScrollIndicator={false}>
+    
       <View style={styles.loadingContainer}>
         <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
       </View>
@@ -92,7 +100,7 @@ const TimeBookingScreen = ( {navigation, route} ) => {
       style={styles.container}
       bounces={false}
       showsVerticalScrollIndicator={false}>
-      <StatusBar hidden />
+    <StatusBar barStyle={'light-content'} />
 
       { /*  IMAGE BACKGROUND */ }
       <View>
@@ -102,13 +110,7 @@ const TimeBookingScreen = ( {navigation, route} ) => {
           <LinearGradient
             colors={[COLORS.BlackRGB10, COLORS.Black]}
             style={styles.linearGradient}>
-            <View style={styles.appHeaderContainer}>
-              <AppHeader
-                name="close"
-                header={''}
-                action={() => navigation.goBack()}
-              />
-            </View>
+            
           </LinearGradient>
         </ImageBackground>
        
@@ -118,7 +120,11 @@ const TimeBookingScreen = ( {navigation, route} ) => {
 
     <View className="mt-8 mx-6" >
 
-    <Text style={styles.font} className="block text-white font-bold mt-8 mb-4 text-xl"  >
+    <Text style={styles.font} className="block text-white font-bold mt-8 mb-6 text-xl"  >
+      {route.params?.eventName}
+        </Text>
+
+    <Text style={styles.font} className="block text-white font-bold mt-2 mb-6 text-xl"  >
     اختر العرض 
         </Text>
 
@@ -158,7 +164,7 @@ const TimeBookingScreen = ( {navigation, route} ) => {
         </Text>
 
         <TouchableOpacity
-        className="mt-3 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6 flex items-end mb-2 w-full"
+        className="mt-3 text-white py-1 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-2 flex items-center mb-2 w-full"
           style={styles.buttonBG}
           onPress={() => navigation.goBack()}>
           <Text style={styles.buttonText}>  الرجوع  </Text>
@@ -172,17 +178,20 @@ const TimeBookingScreen = ( {navigation, route} ) => {
 
     <View className="flex items-center text-center" >
               
-          {selectedId && (
+          {selectedId !== '' && showsArray.length !== 0 && (
             <TouchableOpacity
           className="text-white text-center py-2 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mr-2 mb-2 w-56"
             style={styles.buttonBG}
             onPress={() => {
-              navigation.push('SeatBookingScreen', {
+              navigation.dispatch(
+                  DrawerActions.jumpTo('SeatBookingScreen', {
                 BgImage: route.params.BgImage,
                 PosterImage: route.params.PosterImage,
                 eventId: route.params.eventId,
+                eventName: route.params.eventName,
                 timeId: selectedId
-              });
+              })
+                );
             }}>
             <Text style={styles.buttonText}>  شراء التذاكر </Text>
           </TouchableOpacity>
@@ -254,7 +263,14 @@ const styles = StyleSheet.create({
     fontSize: FONTSIZE.size_16,
     color: COLORS.White,
   },
-
+  loadingContainer: {
+    flex: 1,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1,
+  },
  });
 
 

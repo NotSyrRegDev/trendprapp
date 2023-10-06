@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState , useContext , useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -7,19 +7,24 @@ import {
   ScrollView,
   StatusBar,
   FlatList,
-  Image,
+  RefreshControl,
 } from 'react-native';
-import {COLORS, SPACING} from '../theme/theme';
+import {COLORS, SPACING , FONTSIZE , BORDERRADIUS, FONTFAMILY} from '../theme/theme';
 import CategoryHeader from '../components/CategoryHeader';
 import SubMovieCard from '../components/SubMovieCard';
 import MovieCard from '../components/MovieCard';
 import {  query , collection , getDocs , db } from "../../firebase";
-
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Entypo from 'react-native-vector-icons/Entypo';
+import RefreshableScreen from '../common/RefreshableScreen';
+import { DrawerActions } from '@react-navigation/native';
 const {width, height} = Dimensions.get('window');
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 const HomeScreen = ({navigation}) => {
-  
+
   const [isLoading , setIsLoading] = useState();
   const [error , setError] = useState();
 
@@ -27,29 +32,37 @@ const HomeScreen = ({navigation}) => {
     useState(null);
     
   const [allEventsList, setAllEventsList] = useState(null);
-
-  useEffect(() => {
-    setIsLoading(true);
-  
-    const getEventsData = async () => {
-      try {
-        const q = query(collection(db, "events"));
-        const querySnapshot = await getDocs(q);
-        const eventData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-        setAllEventsList(eventData);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    getEventsData();
-  }, []);
-
-  const searchMoviesFunction = () => {
-    navigation.navigate('Search');
+  const getEventsData = async () => {
+    try {
+      setIsLoading(true);
+      const q = query(collection(db, "events"));
+      const querySnapshot = await getDocs(q);
+      const eventData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setAllEventsList(eventData);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      getEventsData();
+    }, [])
+  );
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setTimeout(() => {
+      setRefreshing(false);
+      getEventsData();
+    }, 2000);
+  };
+
 
   if (
     newEventsList == undefined &&
@@ -62,11 +75,6 @@ const HomeScreen = ({navigation}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
-
-        <View className="flex items-center justify-center mt-2 sticky" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-      </View>
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
@@ -76,12 +84,18 @@ const HomeScreen = ({navigation}) => {
   }
 
   return (
-    <ScrollView style={styles.container} bounces={false}>
-      <StatusBar hidden />
-
-      <View className="flex items-center justify-center mt-2 sticky" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
-      </View>
+    <ScrollView
+    style={{backgroundColor:COLORS.Black }}
+      refreshControl={
+        <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor="white" 
+    />
+        }
+    >
+   <ScrollView style={styles.container} bounces={false}>
+   <StatusBar barStyle={'light-content'} />
 
       {error && (
           <View className=" p-4 text-sm text-white rounded-lg bg-red-500   text-right mb-5 flex items-end" >
@@ -89,10 +103,14 @@ const HomeScreen = ({navigation}) => {
           </View>
         )}
     
-     
-      <CategoryHeader title={'أحدث المسرحيات'} />
+        <View className="mt-2" >
+
+  
+
+      <CategoryHeader title={'أحدث المسرحيات'} postion={'center'}  />
+      <View style={styles.dirR} >
       <FlatList
-        data={allEventsList}
+        data={allEventsList.reverse()}
         keyExtractor={(item) => item.id}
         bounces={false}
         snapToInterval={width * 0.7 + SPACING.space_36}
@@ -113,7 +131,9 @@ const HomeScreen = ({navigation}) => {
             <MovieCard
               shoudlMarginatedAtEnd={true}
               cardFunction={() => {
-                navigation.push('EventDetailScreen', {movieid: item.id});
+                navigation.dispatch(
+                  DrawerActions.jumpTo('EventDetailScreen', {movieid: item.id})
+                );
               }}
               cardWidth={width * 0.7}
               isFirst={index == 0 ? true : false}
@@ -126,45 +146,149 @@ const HomeScreen = ({navigation}) => {
           );
         }}
       />
-     
-      <CategoryHeader title={'المسرحيات'} />
-      <FlatList
+
+      </View>
       
-  data={allEventsList}
-  keyExtractor={(item) => item.id}
-  showsHorizontalScrollIndicator={false}
-  bounces={false}
-  contentContainerStyle={styles.containerGap36}
-  numColumns={2}
+
+    <CategoryHeader title={'ترفيهية'} postion={'right'} />
+
+     <View style={styles.dirR} >
+      <FlatList
+    horizontal
+    data={[...allEventsList].reverse().filter(item => item.event_category == "ترفيهية")}
+    keyExtractor={(item) => item.id}
+    showsHorizontalScrollIndicator={false}
+    bounces={false}
+    contentContainerStyle={styles.containerGap16}
+    
   renderItem={({item, index}) => (
     <SubMovieCard
       shoudlMarginatedAtEnd={true}
       cardFunction={() => {
-        navigation.push('EventDetailScreen', {movieid: item.id});
+        navigation.dispatch(
+                  DrawerActions.jumpTo('EventDetailScreen', {movieid: item.id})
+                );
       }}
-      cardWidth={width / 2.3}
+      cardWidth={width / 2}
     
       isFirst={index == 0 ? true : false}
-      // isLast={index == upcomingMoviesList?.length - 1 ? true : false}
       title={item.event_name}
       imagePath={item.event_image}
-      style={{margin: 40}} 
+      style={{margin: 5}} 
     />
   )}
 />
+
+     </View>
+     
+
+      <CategoryHeader title={'موسيقى'} postion={'right'} />
+      <View style={styles.dirR} >
+          <FlatList
+        horizontal
+        data={[...allEventsList].reverse().filter(item => item.event_category == "موسيقى")}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={styles.containerGap16}
+        
+      renderItem={({item, index}) => (
+        <SubMovieCard
+          shoudlMarginatedAtEnd={true}
+          cardFunction={() => {
+            navigation.dispatch(
+                  DrawerActions.jumpTo('EventDetailScreen', {movieid: item.id})
+                );
+          }}
+          cardWidth={width / 2}
+        
+          isFirst={index == 0 ? true : false}
+          title={item.event_name}
+          imagePath={item.event_image}
+          style={{margin: 5}} 
+        />
+      )}
+    />
+
+     </View>
+
+      <CategoryHeader title={'معارض'} postion={'right'} />
+      <View style={styles.dirR} >
+          <FlatList
+        horizontal
+        data={[...allEventsList].reverse().filter(item => item.event_category == "معارض")}
+        keyExtractor={(item) => item.id}
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={styles.containerGap16}
+        
+      renderItem={({item, index}) => (
+        <SubMovieCard
+          shoudlMarginatedAtEnd={true}
+          cardFunction={() => {
+            navigation.dispatch(
+                  DrawerActions.jumpTo('EventDetailScreen', {movieid: item.id})
+                );
+          }}
+          cardWidth={width / 2}
+        
+          isFirst={index == 0 ? true : false}
+          title={item.event_name}
+          imagePath={item.event_image}
+          style={{margin: 5}} 
+        />
+      )}
+    />
+
+     </View>
+
+      <CategoryHeader title={'رياضة'} postion={'right'} />
+      <View style={styles.dirR} >
+         <FlatList
+  horizontal
+  data={[...allEventsList].reverse().filter(item => item.event_category == "رياضة")}
+  keyExtractor={(item) => item.id}
+  showsHorizontalScrollIndicator={false}
+  bounces={false}
+  contentContainerStyle={styles.containerGap16}
+  renderItem={({ item, index }) => (
+    <SubMovieCard
+      shoudlMarginatedAtEnd={true}
+      cardFunction={() => {
+        navigation.dispatch(
+                  DrawerActions.jumpTo('EventDetailScreen', {movieid: item.id})
+                );
+      }}
+      cardWidth={width / 2}
+      isFirst={index === 0}
+      title={item.event_name}
+      imagePath={item.event_image}
+      style={{ margin: 5 }}
+    />
+  )}
+/>
+
+     </View>
+
+
+</View>
     </ScrollView>
+      </ScrollView>
+ 
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     display: 'flex',
-    backgroundColor: COLORS.Black,
+    backgroundColor: COLORS.BlackTheme,
+    paddingHorizontal: 10,
+  
   },
   logo: {
     resizeMode: 'cover',
-    maxHeight: 100,
-    maxWidth: 320,
+    maxHeight: 50,
+    maxWidth: 170,
   },
   scrollViewContainer: {
     flex: 1,
@@ -187,6 +311,49 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 50,
   },
+  containerGap16: {
+    gap: SPACING.space_4,
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+    paddingTop: 5,
+    paddingBottom: 30,
+  },
+  buttonBorder: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: COLORS.DarkGreen,
+    borderRadius: BORDERRADIUS.radius_25,
+    padding: 4
+  },
+
+  searchBarContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.BlackRGB10,
+    padding: 8,
+    borderRadius: 50,
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    elevation: 1,
+    borderWidth: 2,
+    borderColor: COLORS.Grey,
+  },
+  searchIcon: {
+    marginRight: 20,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.White,
+    fontFamily: FONTFAMILY.cairo,
+  },
+  dirR: {
+    direction: 'rtl'
+  }
 });
 
 export default HomeScreen;

@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const DeleteEvent = () => {
+const OfflineScreen = () => {
   return (
     <View>
-      <Text>DeleteEvent</Text>
+      <Text>OfflineScreen</Text>
     </View>
   )
 }
 
-export default DeleteEvent
+export default OfflineScreen

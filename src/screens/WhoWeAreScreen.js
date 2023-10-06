@@ -1,29 +1,16 @@
 import * as React from 'react';
-import {Text, View, StyleSheet, StatusBar, Image , TouchableOpacity } from 'react-native';
+import {Text, View, StyleSheet, StatusBar , TouchableOpacity  , SafeAreaView} from 'react-native';
 import {COLORS, FONTFAMILY, FONTSIZE, SPACING , BORDERRADIUS} from '../theme/theme';
-import AppHeader from '../components/AppHeader';
+
 
 
 const WhoWeAreScreen = ({navigation}) => {
   return (
-    <View style={styles.container}>
-      <StatusBar hidden />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={'light-content'} />
     
-      <View className="flex items-center justify-center mt-3 relative" >
-      <Image source={require('../assets/icons/logo_color_white.png')} style={styles.logo} />
 
-      <View className="absolute top-16 left-0" >
-      <AppHeader
-                name="close"
-                header={''}
-                action={() => navigation.goBack()}
-              />
-      </View>
-      </View>
-      <View className="mt-2" >
-      <Text style={styles.font} className="block text-white font-bold mb-2 text-2xl"  >
-        من نحن ؟
-        </Text>
+      <View style={styles.appHeaderContainer}  >
 
       </View>
 
@@ -40,7 +27,7 @@ const WhoWeAreScreen = ({navigation}) => {
 
 
       
-    </View>
+    </SafeAreaView>
   );
 };
 

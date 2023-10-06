@@ -18,6 +18,11 @@ import AdminBookingDetail from '../screens/admin/AdminBookingDetail';
 import EditTime from '../screens/admin/times/EditTime';
 import EditActor from '../screens/admin/actors/EditActor';
 import EditTicket from '../screens/admin/tickets/EditTicket';
+import DashboardControl from '../screens/admin/DashboardControl';
+import AddCategory from '../screens/admin/category/AddCategory';
+import Categories from '../screens/admin/category/Categories';
+import EditCateogry from '../screens/admin/category/EditCateogry';
+import AddAdmin from '../screens/admin/admin/AddAdmin';
 
 
 const Stack = createNativeStackNavigator();
@@ -44,8 +49,22 @@ export const AdminAuthNavigator = () => {
 
     { /* Add Event SCREENS */ }
     <Stack.Screen
+      name="DashboardControl"
+      component={DashboardControl}
+      options={{animation: 'slide_from_bottom'}}
+    />
+
+    { /* Add Event SCREENS */ }
+    <Stack.Screen
       name="AddEventDashboard"
       component={AddEvent}
+      options={{animation: 'slide_from_bottom'}}
+    />
+
+    { /* Add Event SCREENS */ }
+    <Stack.Screen
+      name="AddCategoryDashboard"
+      component={AddCategory}
       options={{animation: 'slide_from_bottom'}}
     />
 
@@ -157,6 +176,27 @@ export const AdminAuthNavigator = () => {
     <Stack.Screen
       name="AdminBookingDetail"
       component={AdminBookingDetail}
+      options={{animation: 'slide_from_bottom'}}
+    />
+
+    { /* Edit Event SCREENS */ }
+    <Stack.Screen
+      name="CategoriesAdmin"
+      component={Categories}
+      options={{animation: 'slide_from_bottom'}}
+    />
+
+    { /* Edit Event SCREENS */ }
+    <Stack.Screen
+      name="EditCategory"
+      component={EditCateogry}
+      options={{animation: 'slide_from_bottom'}}
+    />
+
+    { /* Edit Event SCREENS */ }
+    <Stack.Screen
+      name="AddAdmin"
+      component={AddAdmin}
       options={{animation: 'slide_from_bottom'}}
     />
 

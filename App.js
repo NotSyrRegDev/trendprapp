@@ -25,7 +25,7 @@ const App = () => {
     <AuthContextProvider>
       <AppContextProvider>
       <AdminContextProvider>
-      <Navigation />
+      <Navigation  /> 
       </AdminContextProvider>
       <ExpoStatusBar style="auto" />
       </AppContextProvider>

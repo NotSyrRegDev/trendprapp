@@ -1,6 +1,6 @@
 import React, { createContext, useState } from "react";
 export const AdminContext = createContext();
-import {  setDoc, doc , db , storage , ref, uploadBytes, getDownloadURL, updateDoc , deleteDoc, refFromURL, deleteObject } from '../../firebase';
+import {  setDoc, doc , db , storage , ref, uploadBytes, getDownloadURL, updateDoc , deleteDoc, deleteObject } from '../../firebase';
 
 
 
@@ -21,7 +21,7 @@ export const AdminContextProvider = ({ children }) => {
    return result;
 }
 
-  const addEvent = async (eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventThum , eventBanner ) => {
+  const addEvent = async (eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventThum , eventBanner , selectedCategory , tags , callBack) => {
 
     setIsLoading(true);
 
@@ -35,6 +35,14 @@ export const AdminContextProvider = ({ children }) => {
 
     if (eventDesc == '' ) {
       setError("يرجى ادخال وصف المسرحية ");
+       setTimeout(() => {
+      setError('');
+    } , 3000);
+      return;
+    }
+
+    if (selectedCategory == '' ) {
+      setError("يرجى ادخال تصنيف المسرحية ");
        setTimeout(() => {
       setError('');
     } , 3000);
@@ -85,6 +93,7 @@ export const AdminContextProvider = ({ children }) => {
     try {
       const events = await setDoc(doc(db, 'events', idMaked), {
         event_name: eventName,
+        event_category: selectedCategory,
         event_desc: eventDesc,
         event_location: eventLocation,
         event_status: eventStatus,
@@ -92,10 +101,14 @@ export const AdminContextProvider = ({ children }) => {
         event_rating: eventRating,
         event_image: eventThum ? eventThum._j : '',
         event_banner: eventBanner ? eventBanner._j : '',
+        tags: tags,
       });
       setSucces("تمت اضافة المسرحية بنجاح");
       setTimeout( () => {
         setSucces('');
+        if (callBack) {
+          callBack();
+        }
       } , 2500 );
      
     } catch (error) {
@@ -108,7 +121,7 @@ export const AdminContextProvider = ({ children }) => {
 
   }
 
-  const editEvent = async (eventId , eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventThum , eventBanner ) => {
+  const editEvent = async (eventId , eventName , eventDesc , eventLocation , eventStatus , eventDate , eventRating , eventThum , eventBanner , tags , callBack ) => {
 
     setIsLoading(true);
 
@@ -181,6 +194,7 @@ export const AdminContextProvider = ({ children }) => {
       event_rating: eventRating,
       event_image: eventThum ? eventThum._j : '',
       event_banner: eventBanner ? eventBanner._j : '',
+      tags: tags
 
     };
 
@@ -188,6 +202,9 @@ export const AdminContextProvider = ({ children }) => {
       setSucces("تم تعديل المسرحية بنجاح");
       setTimeout( () => {
         setSucces('');
+        if (callBack) {
+          callBack();
+        }
       } , 2500 );
      
     } catch (error) {
@@ -200,7 +217,7 @@ export const AdminContextProvider = ({ children }) => {
 
   }
 
-  const addActor = async ( actorName, actorJob , actorThum , event_rel_id ) => {
+  const addActor = async ( actorName, actorJob , actorThum , event_rel_id , navigateCallback  ) => {
 
     setIsLoading(true);
 
@@ -241,6 +258,9 @@ export const AdminContextProvider = ({ children }) => {
       setSucces("تمت اضافة الممثل بنجاح");
       setTimeout( () => {
         setSucces('');
+        if (navigateCallback) {
+          navigateCallback();
+        }
       } , 2500 );
     }
     catch (error) {
@@ -258,7 +278,7 @@ export const AdminContextProvider = ({ children }) => {
 
   }
 
-  const addShow = async ( date , startTime , endTime , status , event_rel_id ) => {
+  const addShow = async ( date , startTime , endTime , status , event_rel_id  , navigateCallback ) => {
 
     setIsLoading(true);
     if (date == '' ) {
@@ -303,6 +323,9 @@ export const AdminContextProvider = ({ children }) => {
     setSucces("تمت اضافة العرض بنجاح");
     setTimeout( () => {
       setSucces('');
+      if (navigateCallback) {
+        navigateCallback(); // Invoke the callback to trigger navigation
+      }
     } , 2500 );
     }
     catch (error) {
@@ -315,7 +338,7 @@ export const AdminContextProvider = ({ children }) => {
 
   }
 
-  const editShow = async ( date , startTime , endTime , status , event_rel_id , eventId ) => {
+  const editShow = async ( date , startTime , endTime , status , event_rel_id , eventId , callBack ) => {
 
     setIsLoading(true);
     if (date == '' ) {
@@ -363,6 +386,9 @@ export const AdminContextProvider = ({ children }) => {
         setSucces("تم تعديل الوقت بنجاح");
         setTimeout( () => {
           setSucces('');
+          if (callBack) {
+            callBack();
+          }
         } , 2500 );
         
     }
@@ -379,7 +405,7 @@ export const AdminContextProvider = ({ children }) => {
   
   }
 
-  const editActor = async ( actorName, actorJob , actorThum , event_rel_id) => {
+  const editActor = async ( actorName, actorJob , actorThum , event_rel_id , callBack ) => {
 
     setIsLoading(true);
     if (actorName == '' ) {
@@ -419,6 +445,9 @@ export const AdminContextProvider = ({ children }) => {
         setSucces("تم تعديل الممثل بنجاح");
         setTimeout( () => {
           setSucces('');
+          if (callBack) {
+            callBack();
+          }
         } , 2500 );
     }
     catch (e) { 
@@ -432,7 +461,7 @@ export const AdminContextProvider = ({ children }) => {
 
   }
 
-  const editTicket = async ( ticketSeat, ticketPrice , ticketCategory , event_rel_id) => {
+  const editTicket = async ( ticketSeat, ticketPrice , ticketCategory , event_rel_id , callBack) => {
 
     setIsLoading(true);
     if (ticketCategory == '' ) {
@@ -472,6 +501,9 @@ export const AdminContextProvider = ({ children }) => {
         setSucces("تم تعديل التذكرة بنجاح");
         setTimeout( () => {
           setSucces('');
+          if (callBack) {
+            callBack();
+          }
         } , 2500 );
     }
     catch (error) {
@@ -480,12 +512,10 @@ export const AdminContextProvider = ({ children }) => {
       setError('');
     } , 2500 );
     }
-      
-        
   
   }
 
-  const addTicket = async (ticketCategory , ticketSeat , ticketPrice , realtedOffer , tikcetNumber , event_rel_id  ) => {
+  const addTicket = async (ticketCategory , ticketSeat , ticketPrice , realtedOffer , tikcetNumber , event_rel_id , navigateCallback  ) => {
 
     setIsLoading(true);
     if (ticketCategory == '' ) {
@@ -539,6 +569,9 @@ export const AdminContextProvider = ({ children }) => {
       setSucces("تمت إضافة التذاكر بنجاح");
       setTimeout(() => {
         setSucces('');
+        if (navigateCallback) {
+          navigateCallback(); // Invoke the callback to trigger navigation
+        }
       }, 2500);
     } catch (error) {
       // Error occurred while creating the tickets, handle the error
@@ -658,12 +691,83 @@ export const AdminContextProvider = ({ children }) => {
 deleteObject(storageRef)
   .then(() => {
     // Deletion successful
-    console.log("Image deleted successfully");
+   
   })
   .catch((error) => {
     // Error occurred during deletion
-    console.error("Error deleting image:", error);
+   
   });
+
+  }
+
+  const addCategory = async ( catName , navigateCallback ) => {
+    setIsLoading(true);
+    if (catName == '' ) {
+      setError("يرجى ادخال اسم الفئة");
+       setTimeout(() => {
+      setError('');
+    } , 3000);
+      return;
+    }
+   
+
+    try {
+      let idMaked = makeid(20);
+    const categories = await setDoc(doc(db, 'categories', idMaked), {
+      id: idMaked,
+      category: catName,
+    });
+    setSucces("تمت اضافة الفئة بنجاح");
+    setTimeout( () => {
+      setSucces('');
+      if (navigateCallback) {
+        navigateCallback(); // Invoke the callback to trigger navigation
+      }
+    } , 2500 );
+    }
+    catch (error) {
+     
+     setError("حدث خطأ في العملية");
+     setTimeout( () => {
+      setError('');
+    } , 2500 );
+    }
+
+  }
+
+  const editCategory =  async ( catName , cat_id , callBack ) => {
+
+    setIsLoading(true);
+    if (catName == '' ) {
+      setError("يرجى ادخال اسم الفئة");
+       setTimeout(() => {
+      setError('');
+    } , 3000);
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "categories", cat_id);
+
+      const data = {
+        category: catName,
+      };
+  
+      updateDoc(docRef, data);
+        setSucces("تم تعديل الفئة بنجاح");
+        setTimeout( () => {
+          setSucces('');
+          if (callBack) {
+            callBack();
+          }
+        } , 2500 );
+    }
+    catch (e) { 
+      setError("حدث خطأ في العملية");
+      setTimeout( () => {
+       setError('');
+     } , 2500 );
+    }
 
   }
 
@@ -688,7 +792,9 @@ deleteObject(storageRef)
         convertDateToArabic,
         convertTimeToHourMinuteString,
         convertTimeToDateTimeString,
-        convertTimeToDateString
+        convertTimeToDateString,
+        addCategory,
+        editCategory
        }}
     >
       {children}

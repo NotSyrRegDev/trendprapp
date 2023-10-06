@@ -9,7 +9,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Image,
-  Button,
   ActivityIndicator,
   Platform
 } from 'react-native';
@@ -95,13 +94,12 @@ const EditTime = ({navigation , route}) => {
   const { editShow , error  , success  } = useContext(AdminContext);
 
   const editTimeShow = (  )=> {
-    console.log(endTime);
-    editShow(timeDate , startTime , endTime ,   timeAvaliablity , route.params.editId  , route.params.eventId );
-
-     
-        setTimeout( () => {
-          navigation.navigate('AdminDashboard')
-        } , 5500)
+    setIsLoading(true);
+    editShow(timeDate , startTime , endTime ,   timeAvaliablity , route.params.editId  , route.params.eventId , () => {
+      navigation.navigate('AdminDashboard')
+      setIsLoading(false);
+    } );
+    
 
   }
 
@@ -114,7 +112,7 @@ const EditTime = ({navigation , route}) => {
       style={styles.container}
       bounces={false}
       contentContainerStyle={styles.scrollViewContainer}>
-      <StatusBar hidden />
+      <StatusBar barStyle={'light-content'} />
 
       <View className="flex items-center justify-center mt-2 sticky" >
     <Image source={require('../../../assets/icons/logo_color_white.png')} style={styles.logo} />
@@ -289,12 +287,19 @@ const EditTime = ({navigation , route}) => {
 </View>
 { /*  END SINGLE INPUT */ }
 
-<TouchableOpacity
+    {isLoading ?  (
+      <View  className="flex items-center justify-center" >
+              <ActivityIndicator size={'large'} color={COLORS.DarkGreen} />
+            </View>
+    ) : (
+      <TouchableOpacity
         className="mt-2 text-white py-3 bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-6  mb-2 w-full"
           style={styles.button}
           onPress={() =>  editTimeShow() }>
           <Text style={styles.buttonText}>  تعديل العرض </Text>
-        </TouchableOpacity>
+            </TouchableOpacity>
+        )}
+
 
 
 
@@ -430,7 +435,15 @@ const styles = StyleSheet.create({
     fontFamily: FONTFAMILY.cairo_bold,
     textAlign: 'right',
     color: COLORS.White
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    alignSelf: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1,
+  },
 
 });
 

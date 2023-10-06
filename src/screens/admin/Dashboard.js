@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState , useCallback} from 'react';
 import {
   Text,
   View,
@@ -10,6 +10,7 @@ import {
   StatusBar,
   FlatList,
   Image,
+  RefreshControl,
 } from 'react-native';
 import {COLORS, SPACING  , FONTFAMILY , BORDERRADIUS} from '../../theme/theme';
 import {  query , collection , getDocs , db } from "../../../firebase";
@@ -18,6 +19,8 @@ import SubMovieCard from '../../components/SubMovieCard';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthenticationContext } from '../../context/AuthContext';
 const {width, height} = Dimensions.get('window');
+import { useFocusEffect } from '@react-navigation/native';
+
 
 const Dashboard = ({navigation}) => {
 
@@ -26,24 +29,35 @@ const Dashboard = ({navigation}) => {
   const [allEventsList, setAllEventsList] = useState(null);
   const { onLogout } = useContext(AuthenticationContext);
 
-  useEffect(() => {
-    setIsLoading(true);
+  const getEventsData = async () => {
+    try {
+      const q = query(collection(db, "events"));
+      const querySnapshot = await getDocs(q);
+      const eventData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setAllEventsList(eventData);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   
-    const getEventsData = async () => {
-      try {
-        const q = query(collection(db, "events"));
-        const querySnapshot = await getDocs(q);
-        const eventData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-        setAllEventsList(eventData);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    getEventsData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      getEventsData();
+    }, [])
+  );
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setTimeout(() => {
+      setRefreshing(false);
+      getEventsData();
+    }, 2000);
+  };
 
   if (
     allEventsList == undefined &&
@@ -54,7 +68,7 @@ const Dashboard = ({navigation}) => {
         style={styles.container}
         bounces={false}
         contentContainerStyle={styles.scrollViewContainer}>
-        <StatusBar hidden />
+        <StatusBar barStyle={'light-content'} />
 
         {  /* TOP HEader */}
       <View className="flex flex-row items-center justify-between mt-16" >
@@ -75,17 +89,24 @@ const Dashboard = ({navigation}) => {
 
 
   return (
+
+    <ScrollView
+  style={{backgroundColor:COLORS.Black }}
+      refreshControl={
+        <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor="white" 
+    />
+        }
+    >
     <ScrollView style={styles.container} bounces={false}>
-  <StatusBar hidden />
+  <StatusBar barStyle={'light-content'} />
   
   {/* TOP Header */}
-  <View className="flex flex-row items-center justify-between mt-16">
+  <View className="flex flex-row items-center justify-center mt-16">
     <Image source={require('../../assets/icons/logo_color_white.png')} style={styles.icon_logo} />
-    {/* <MaterialCommunityIcons
-      name="menu"
-      size={26}
-      style={[styles.starIcon]}
-    /> */}
+   
   </View>
   {/* TOP Header */}
 
@@ -105,7 +126,7 @@ const Dashboard = ({navigation}) => {
             <TouchableOpacity
               className="text-white bg-gray-800 hover:bg-gray-900 rounded-lg text-sm px-2 py-4 mr-2 mb-2"
               style={styles.button}
-              onPress={() => navigation.navigate('AddEventDashboard')}
+              onPress={() => navigation.navigate('DashboardControl')}
             >
               <Text style={styles.buttonText}> إنشاء </Text>
             </TouchableOpacity>
@@ -125,7 +146,7 @@ const Dashboard = ({navigation}) => {
       <SubMovieCard
         shoudlMarginatedAtEnd={true}
         cardFunction={() => {
-          navigation.push('ManageEvent', { movieid: item.id });
+        navigation.navigate('ManageEvent', { movieid: item.id });
         }}
         cardWidth={width / 2.3}
         isFirst={index == 0 ? true : false}
@@ -146,6 +167,8 @@ const Dashboard = ({navigation}) => {
         </TouchableOpacity>
         </View>
     
+
+</ScrollView>
 
 </ScrollView>
   );

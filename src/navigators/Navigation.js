@@ -9,6 +9,8 @@ import { AppAuthNavigator } from "./AppAuthNavigator";
 export const Navigation = () => {
   const { isAuthenticated , isAdmin } = useContext(AuthenticationContext);
 
+  
+
   return (
     <>
   <NavigationContainer>
@@ -22,11 +24,8 @@ export const Navigation = () => {
   ) }
 
   { !isAuthenticated && (
-    <AppNavigator />
+        <AppNavigator />
   ) }
-
-
-
       
     </NavigationContainer>
     </>

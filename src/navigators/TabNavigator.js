@@ -1,17 +1,24 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View } from 'react-native';
+import { View , TouchableOpacity } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import UserAccountScreen from '../screens/UserAccountScreen';
 import { COLORS, FONTSIZE } from '../theme/theme';
 import Octicons from 'react-native-vector-icons/Octicons';
 import Fontisto from 'react-native-vector-icons/Fontisto';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import TicketLoginScreen from '../screens/TicketLoginScreen';
+import ExploreScreen from '../screens/ExploreScreen';
+import { AppContext } from '../context/AppContext';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
+
+  const {  isFilterModalVisible  , setIsFilterModalVisible  } = useContext(AppContext);
+
+
   return (
     <Tab.Navigator
       initialRouteName="HomeScreen"
@@ -19,7 +26,7 @@ const TabNavigator = () => {
         headerShown: false,
         tabBarStyle: {
 
-         backgroundColor: '#0b0b0b',
+         backgroundColor: '#262630',
           borderTopWidth: 0,
           height: 70,
         },
@@ -54,8 +61,55 @@ const TabNavigator = () => {
         }}
       />
 
-
-     
+<Tab.Screen
+        name="ExploreScreen"
+        component={ExploreScreen}
+        options={({  }) => ({
+          tabBarShowLabel: false,
+          tabBarIcon: ({ focused }) => {
+            
+            return (
+              <View
+                style={[
+                  styles.activeTabBackground,
+                  focused ? { backgroundColor: COLORS.DarkGreen } : {},
+                ]}
+              >
+                <View style={{ position: 'relative' }}>
+                  <AntDesign
+                    name="search1"
+                    color={COLORS.White}
+                    size={FONTSIZE.size_18}
+                  />
+                  { focused && (
+                    <TouchableOpacity onPress={() => {
+                      setIsFilterModalVisible(!isFilterModalVisible)
+                    }}  style={ {
+                      position: 'absolute',
+                      top: -72,
+                      right: 88,
+                      width: 53,
+                       height: 53,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 150,
+                      backgroundColor: COLORS.DarkGreen
+                    }} >
+      <Ionicons
+              name="filter"
+              color={COLORS.White}
+              size={25}
+                  />
+                  </TouchableOpacity>
+                  ) }
+                 
+                 
+                </View>
+              </View>
+            );
+          },
+        })}
+      />
 
       <Tab.Screen
         name="TicketLoginScreen"
@@ -80,6 +134,7 @@ const TabNavigator = () => {
           },
         }}
       />
+
 <Tab.Screen
         name="UserAccountScreen"
         component={UserAccountScreen}
@@ -106,6 +161,8 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+
 
 const styles = {
   activeTabBackground: {
